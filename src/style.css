@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+  --color-cyan-vivid: #06b6d4;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background-color: #f7f9fb;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* 
+     CLASE MAESTRA DE AIRE: 
+     Configurada a 1rem (16px) para los laterales, tal como solicitaste.
+     Esta clase debe envolver el <RouterView /> en App.vue para afectar a todas las pantallas.
+  */
+  .aire-lateral {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
