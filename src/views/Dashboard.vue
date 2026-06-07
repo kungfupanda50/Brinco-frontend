@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <!-- Encabezado -->
+    <!-- Encabezado con Botón de Sincronización Real -->
     <header class="flex justify-between items-end mb-10">
       <div>
         <h1 class="text-4xl font-black text-slate-900 mb-2">Panel de Control</h1>
@@ -27,6 +27,7 @@
 
     <!-- KPIs Principales -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <!-- Órdenes Activas -->
       <div
         class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group hover:border-[#06b6d4]/30 transition-all"
       >
@@ -43,6 +44,7 @@
         </div>
       </div>
 
+      <!-- Ventas Hoy -->
       <div
         class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-all"
       >
@@ -61,6 +63,7 @@
         </div>
       </div>
 
+      <!-- Utilidad Estimada -->
       <div
         class="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-all"
       >
@@ -71,7 +74,7 @@
             <span class="material-icons text-2xl">auto_graph</span>
           </div>
           <p class="text-[10px] font-black text-[#06b6d4] uppercase tracking-widest mb-1">
-            Utilidad Estimada
+            Utilidad Estimada (Día)
           </p>
           <h2 class="text-4xl font-black text-white">Q {{ utilidadEstimada }}</h2>
         </div>
@@ -80,6 +83,7 @@
         ></div>
       </div>
 
+      <!-- Stock Crítico -->
       <div
         class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-all"
       >
@@ -105,7 +109,7 @@
       </div>
     </div>
 
-    <!-- SECCIONES DE CATEGORÍAS DUALES (SOLUCIÓN) -->
+    <!-- SECCIONES DE CATEGORÍAS DUALES (Sincronizadas con Backend Maestra) -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
       <!-- Panel: Categoría de Clientes -->
       <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
@@ -130,18 +134,18 @@
           <div
             v-for="cat in categoriasClientes"
             :key="cat.id"
-            class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1"
+            class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1 hover:border-fuchsia-200 transition-all"
           >
             <span class="text-[9px] font-black text-slate-400 uppercase tracking-tight">{{
               cat.nombre
             }}</span>
-            <span class="text-xl font-black text-slate-800">{{ cat.total_clientes || 0 }}</span>
+            <span class="text-2xl font-black text-slate-800">{{ cat.total_clientes || 0 }}</span>
           </div>
           <div
             v-if="categoriasClientes.length === 0"
             class="col-span-2 py-4 text-center text-[10px] font-bold text-slate-300 uppercase italic"
           >
-            Sin categorías registradas
+            Cargando categorías...
           </div>
         </div>
       </div>
@@ -169,18 +173,18 @@
           <div
             v-for="cat in categoriasProductos"
             :key="cat.id"
-            class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1"
+            class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1 hover:border-cyan-200 transition-all"
           >
             <span class="text-[9px] font-black text-slate-400 uppercase tracking-tight">{{
               cat.nombre
             }}</span>
-            <span class="text-xl font-black text-slate-800">{{ cat.total_productos || 0 }}</span>
+            <span class="text-2xl font-black text-slate-800">{{ cat.total_productos || 0 }}</span>
           </div>
           <div
             v-if="categoriasProductos.length === 0"
             class="col-span-2 py-4 text-center text-[10px] font-bold text-slate-300 uppercase italic"
           >
-            Sin categorías registradas
+            Cargando categorías...
           </div>
         </div>
       </div>
@@ -213,7 +217,7 @@
               <tr>
                 <th class="px-8 py-5">Orden / Cliente</th>
                 <th class="px-8 py-5">Estado</th>
-                <th class="px-8 py-5 text-right">Costo Total</th>
+                <th class="px-8 py-5 text-right">Rentabilidad</th>
                 <th class="px-8 py-5 text-right">Total (Venta)</th>
               </tr>
             </thead>
@@ -244,7 +248,8 @@
                     Q
                     {{
                       (
-                        Number(orden.total_costo_materiales) + Number(orden.costo_mano_obra)
+                        Number(orden.total_quetzales) -
+                        (Number(orden.total_costo_materiales) + Number(orden.costo_mano_obra))
                       ).toFixed(2)
                     }}
                   </p>
@@ -291,7 +296,7 @@
             <div class="flex-1">
               <p class="text-xs font-black text-slate-700 leading-tight">{{ item.nombre }}</p>
               <p class="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-tighter">
-                Stock: {{ Number(item.stock_actual).toLocaleString() }}
+                Quedan {{ Number(item.stock_actual).toLocaleString() }}
               </p>
             </div>
           </div>
@@ -322,6 +327,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '../api/axios'
 
+// --- ESTADO ---
 const cargando = ref(true)
 const stats = ref({ ordenes_activas: 0, stock_bajo: 0, ventas_hoy: 0 })
 const ordenes = ref([])
@@ -329,22 +335,27 @@ const stockBajo = ref([])
 const categoriasClientes = ref([])
 const categoriasProductos = ref([])
 
+// --- MÉTODOS ---
+
 const cargarDatos = async () => {
   try {
     cargando.value = true
+    // Ejecutamos todas las peticiones a los endpoints optimizados que ahora devuelven los contadores dinámicos
     const [resStats, resOrd, resStock, resCatCli, resCatProd] = await Promise.all([
       api.get('/dashboard/stats'),
       api.get('/ordenes'),
       api.get('/dashboard/stock-bajo'),
-      api.get('/clientes/categorias'),
-      api.get('/categorias'),
+      api.get('/clientes/categorias'), // Devuelve total_clientes por ID
+      api.get('/categorias'), // Devuelve total_productos por ID
     ])
 
     if (resStats.data) stats.value = resStats.data
-    if (resOrd.data) ordenes.value = resOrd.data.slice(0, 5)
+    if (resOrd.data) ordenes.value = resOrd.data.slice(0, 5) // Mostramos solo las 5 más recientes
     if (resStock.data) stockBajo.value = resStock.data
     if (resCatCli.data) categoriasClientes.value = resCatCli.data.slice(0, 4)
     if (resCatProd.data) categoriasProductos.value = resCatProd.data.slice(0, 4)
+
+    console.log('✅ Dashboard sincronizado con métricas dinámicas')
   } catch (err) {
     console.error('Error al sincronizar Dashboard:', err)
   } finally {
@@ -353,6 +364,7 @@ const cargarDatos = async () => {
 }
 
 const utilidadEstimada = computed(() => {
+  // Cálculo de margen promedio (aprox 35% del volumen de venta total de hoy)
   const totalHoy = Number(stats.value.ventas_hoy) || 0
   return (totalHoy * 0.35).toLocaleString(undefined, { minimumFractionDigits: 2 })
 })

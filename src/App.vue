@@ -6,11 +6,10 @@ const router = useRouter()
 const route = useRoute()
 const sidebarOpen = ref(true)
 
-// Lista de rutas actualizada con Categorización Dual
+// Lista completa de rutas para Brinco Creativo
 const menuItems = [
   { name: 'Dashboard', path: '/', icon: 'dashboard' },
   { name: 'Clientes', path: '/clientes', icon: 'people' },
-
   { name: 'Órdenes', path: '/ordenes', icon: 'assignment' },
   { name: 'Nueva Orden', path: '/nueva-orden', icon: 'add_box' },
   { name: 'Inventario', path: '/inventario', icon: 'inventory_2' },
@@ -29,12 +28,13 @@ const menuItems = [
     <aside :class="['sidebar', sidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed']">
       <!-- Logo y Marca -->
       <div class="logo-container">
-        <div class="logo-icon">
-          <span class="material-icons">rocket_launch</span>
-        </div>
-        <div v-if="sidebarOpen" class="brand-text">
-          <h1 class="brand-name">Brinco</h1>
-          <p class="brand-sub">Creativo</p>
+        <div class="logo-wrapper">
+          <!-- 
+            IMPORTANTE: 
+            1. Descarga el logo del lienzo (clic derecho -> guardar imagen).
+            2. Guárdalo en tu carpeta 'src/assets/' con el nombre 'logo.png'.
+          -->
+          <img src="/src/assets/logo.png" alt="Brinco Creativo" class="brand-logo-img" />
         </div>
       </div>
 
@@ -68,18 +68,15 @@ const menuItems = [
     </aside>
 
     <!-- ÁREA DE CONTENIDO (MAIN) -->
-    <main class="flex-1 overflow-y-auto bg-[#f7f9fb] w-full">
-      <!-- 
-        CAPA DE AIRE ESTANDARIZADA:
-        Usamos la clase .aire-lateral definida en style.css para un control centralizado
-        manteniendo el margen de 1rem (16px) que acordamos.
-      -->
-      <div class="aire-lateral">
-        <RouterView v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </RouterView>
+    <main class="main-content">
+      <div class="content-scroll-area">
+        <div class="content-container">
+          <RouterView v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </RouterView>
+        </div>
       </div>
     </main>
   </div>
@@ -119,40 +116,27 @@ const menuItems = [
   padding: 24px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
   margin-bottom: 24px;
   flex-shrink: 0;
 }
 
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  background-color: #06b6d4;
-  border-radius: 12px;
+.logo-wrapper {
+  width: 100%;
   display: flex;
-  align-items: center;
   justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.2);
+  transition: all 0.3s;
 }
 
-.brand-text {
-  overflow: hidden;
+.brand-logo-img {
+  max-width: 180px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
-.brand-name {
-  font-size: 20px;
-  font-weight: 900;
-  color: #0f172a;
-  line-height: 1;
-  margin: 0;
-}
-.brand-sub {
-  font-size: 10px;
-  font-weight: 700;
-  color: #06b6d4;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 4px;
+
+.sidebar-collapsed .brand-logo-img {
+  max-width: 40px;
 }
 
 .nav-menu {
@@ -234,6 +218,27 @@ const menuItems = [
 }
 .toggle-btn:hover {
   color: #64748b;
+}
+
+/* Main Content Estilos */
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 16px; /* AIRE: 16px lateral consistente */
+}
+
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
 }
 
 /* Transiciones */

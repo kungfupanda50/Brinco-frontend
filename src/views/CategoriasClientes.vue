@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <!-- Encabezado -->
+    <!-- Encabezado de la Pantalla -->
     <header
       class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10"
     >
@@ -62,7 +62,7 @@
             >
               <th class="px-10 py-6">Nombre</th>
               <th class="px-10 py-6">Descripción</th>
-              <th class="px-10 py-6">Identificador</th>
+              <th class="px-10 py-6">Identificador Visual</th>
               <th class="px-10 py-6 text-right">Acciones</th>
             </tr>
           </thead>
@@ -76,7 +76,7 @@
                 <div class="flex items-center gap-4">
                   <div
                     :class="cat.color_clase || 'bg-slate-100 text-slate-400'"
-                    class="w-10 h-10 rounded-xl flex items-center justify-center font-black"
+                    class="w-10 h-10 rounded-xl flex items-center justify-center font-black border"
                   >
                     {{ cat.nombre.charAt(0) }}
                   </div>
@@ -93,7 +93,7 @@
                   :class="cat.color_clase"
                   class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
                 >
-                  {{ cat.nombre.toUpperCase() }}_ID
+                  {{ cat.nombre.toUpperCase() }}
                 </span>
               </td>
               <td class="px-10 py-8 text-right">
@@ -119,7 +119,9 @@
       </div>
     </div>
 
-    <!-- MODAL DE CATEGORÍA -->
+    <!-- ========================================== -->
+    <!-- MODAL DE CATEGORÍA CON COLOR PICKER -->
+    <!-- ========================================== -->
     <div v-if="modalAbierto" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div @click="cerrarModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
 
@@ -132,7 +134,7 @@
               {{ editando ? 'Editar Categoría' : 'Nueva Categoría' }}
             </h2>
             <p class="text-xs font-bold text-[#06b6d4] uppercase tracking-widest mt-1">
-              Configuración de segmentos
+              Configuración de segmentos comerciales
             </p>
           </div>
           <button
@@ -144,6 +146,7 @@
         </header>
 
         <form @submit.prevent="guardar" class="p-8 space-y-6">
+          <!-- Nombre -->
           <div class="flex flex-col gap-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
               >Nombre de la Categoría</label
@@ -152,33 +155,55 @@
               v-model="formulario.nombre"
               required
               type="text"
+              placeholder="Ej. VIP, Mayorista, Nuevo..."
               class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700"
             />
           </div>
 
-          <div class="flex flex-col gap-2">
+          <!-- SELECTOR VISUAL DE COLOR (PICKER) -->
+          <div class="flex flex-col gap-3">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
-              >Clase de Color (Tailwind)</label
+              >Color Distintivo (Seleccionar con mouse)</label
             >
-            <input
-              v-model="formulario.color_clase"
-              placeholder="bg-cyan-50 text-cyan-600 border-cyan-100"
-              class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-mono text-xs"
-            />
+            <div class="grid grid-cols-4 sm:grid-cols-7 gap-3 px-2">
+              <button
+                v-for="color in opcionesColor"
+                :key="color.clases"
+                type="button"
+                @click="formulario.color_clase = color.clases"
+                :class="[
+                  color.clases,
+                  'w-full aspect-square rounded-xl border-2 transition-all flex items-center justify-center hover:scale-110 active:scale-95',
+                  formulario.color_clase === color.clases
+                    ? 'border-[#06b6d4] ring-4 ring-cyan-100'
+                    : 'border-transparent',
+                ]"
+                :title="color.nombre"
+              >
+                <span v-if="formulario.color_clase === color.clases" class="material-icons text-sm"
+                  >check</span
+                >
+              </button>
+            </div>
+            <p class="text-[9px] text-slate-400 italic ml-2 mt-1">
+              Este color se usará para identificar a los clientes en todo el sistema.
+            </p>
           </div>
 
+          <!-- Descripción -->
           <div class="flex flex-col gap-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
-              >Descripción</label
+              >Descripción de la Categoría</label
             >
             <textarea
               v-model="formulario.descripcion"
               rows="3"
+              placeholder="Define el perfil de clientes que pertenecen a este grupo..."
               class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700 resize-none"
             ></textarea>
           </div>
 
-          <div class="flex gap-4 pt-4">
+          <div class="flex gap-4 pt-4 border-t border-slate-50">
             <button
               type="button"
               @click="cerrarModal"
@@ -215,6 +240,17 @@ const cargando = ref(true)
 const guardando = ref(false)
 const busqueda = ref('')
 
+// --- CONFIGURACIÓN DE COLORES (MAPEO TAILWIND) ---
+const opcionesColor = [
+  { nombre: 'Cyan', clases: 'bg-cyan-50 text-[#06b6d4] border-cyan-100' },
+  { nombre: 'Fucsia', clases: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100' },
+  { nombre: 'Naranja', clases: 'bg-amber-50 text-amber-600 border-amber-100' },
+  { nombre: 'Esmeralda', clases: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+  { nombre: 'Rosa', clases: 'bg-rose-50 text-rose-600 border-rose-100' },
+  { nombre: 'Indigo', clases: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+  { nombre: 'Gris', clases: 'bg-slate-50 text-slate-400 border-slate-100' },
+]
+
 // --- MODAL ---
 const modalAbierto = ref(false)
 const editando = ref(false)
@@ -225,12 +261,13 @@ const formulario = ref({
   color_clase: '',
 })
 
-// --- MÉTODOS ---
+// --- MÉTODOS DE DATOS ---
 
 const cargarCategorias = async () => {
   try {
     cargando.value = true
     const response = await api.get('/clientes/categorias')
+    // Se asegura que la respuesta sea un array para evitar errores en el template
     categorias.value = Array.isArray(response.data) ? response.data : []
   } catch (err) {
     console.error('Error cargando categorías:', err)
@@ -242,10 +279,11 @@ const cargarCategorias = async () => {
 const abrirModalCreacion = () => {
   editando.value = false
   catId.value = null
+  // Valor por defecto para nuevas categorías
   formulario.value = {
     nombre: '',
     descripcion: '',
-    color_clase: 'bg-slate-50 text-slate-600 border-slate-200',
+    color_clase: opcionesColor[0].clases,
   }
   modalAbierto.value = true
 }
@@ -253,6 +291,7 @@ const abrirModalCreacion = () => {
 const abrirModalEdicion = (cat) => {
   editando.value = true
   catId.value = cat.id
+  // CORRECCIÓN DE REACTIVIDAD: Desvinculamos la referencia del objeto original
   formulario.value = { ...cat }
   modalAbierto.value = true
 }
@@ -264,6 +303,7 @@ const cerrarModal = () => {
 const guardar = async () => {
   try {
     guardando.value = true
+    // CORRECCIÓN: Usamos backticks limpios para el endpoint dinámico
     if (editando.value) {
       await api.put(`/clientes/categorias/${catId.value}`, formulario.value)
     } else {
@@ -272,15 +312,17 @@ const guardar = async () => {
     await cargarCategorias()
     cerrarModal()
   } catch (err) {
-    alert('Error al guardar')
+    console.error('Error al guardar:', err)
+    alert('Error técnico al intentar guardar la categoría.')
   } finally {
     guardando.value = false
   }
 }
 
+// --- LÓGICA DE FILTRADO ---
 const categoriasFiltradas = computed(() => {
-  return categorias.value.filter((c) =>
-    c.nombre.toLowerCase().includes(busqueda.value.toLowerCase()),
+  return (categorias.value || []).filter((c) =>
+    (c.nombre || '').toLowerCase().includes((busqueda.value || '').toLowerCase()),
   )
 })
 
@@ -288,6 +330,12 @@ onMounted(cargarCategorias)
 </script>
 
 <style scoped>
+/* Animaciones suaves para el Modal */
+.animate-in {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -295,5 +343,10 @@ onMounted(cargarCategorias)
 }
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Transición suave para botones */
+.group:hover .material-icons {
+  transform: translateY(-1px);
 }
 </style>
