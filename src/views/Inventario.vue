@@ -158,7 +158,7 @@
                   </div>
                   <div class="flex">
                     <span
-                      v-if="item.stock_actual <= item.stock_minimo"
+                      v-if="Number(item.stock_actual) <= Number(item.stock_minimo)"
                       class="px-2 py-0.5 bg-red-50 text-red-500 rounded text-[9px] font-black uppercase tracking-widest border border-red-100"
                     >
                       Stock Crítico

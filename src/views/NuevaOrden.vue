@@ -77,7 +77,7 @@
           <!-- Alertas de Stock Preventivas -->
           <div
             class="px-8 py-4 bg-amber-50 border-b border-amber-100 space-y-2"
-            v-if="alertasStock.length &gt; 0"
+            v-if="alertasStock.length > 0"
           >
             <div
               :key="idx"
@@ -248,7 +248,13 @@
                 </div>
                 <div class="text-right">
                   <p
-                    :class="margenUtilidad &gt;= 30 ? 'text-emerald-400' : margenUtilidad &gt; 0 ? 'text-amber-400' : 'text-red-400'"
+                    :class="
+                      margenUtilidad >= 30
+                        ? 'text-emerald-400'
+                        : margenUtilidad > 0
+                          ? 'text-amber-400'
+                          : 'text-red-400'
+                    "
                     class="text-2xl font-black"
                   >
                     {{ margenUtilidad.toFixed(1) }}%
@@ -277,17 +283,17 @@
             class="w-5 h-5 border-[3px] border-white border-t-transparent rounded-full animate-spin"
             v-if="procesando"
           ></span>
-          <span class="material-icons" v-else="">task_alt</span>
+          <span class="material-icons" v-else>task_alt</span>
           {{ procesando ? 'PROCESANDO...' : 'CONFIRMAR PRESUPUESTO' }}
         </button>
         <p class="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
-          Se descontará el stock real al confirmar.
+          Esta acción NO afecta el stock. El descuento se realiza manualmente en el tablero.
         </p>
       </div>
     </div>
   </div>
 </template>
-<script setup="">
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api/axios'
 import { useRouter } from 'vue-router'
@@ -310,7 +316,7 @@ const orden = ref({
 
 const alertasStock = ref([])
 
-// Vigilancia de materiales para alertas de stock
+// Vigilancia de materiales para alertas de stock (Referencial)
 watch(
   () => orden.value.materiales,
   () => {
@@ -320,7 +326,7 @@ watch(
       if (prod) {
         if (Number(item.cantidad) > Number(prod.stock_actual)) {
           alertasStock.value.push(
-            `¡ERROR! "${prod.nombre}" no tiene suficiente existencia (Disponible: ${prod.stock_actual})`,
+            `AVISO: "${prod.nombre}" no tiene suficiente existencia actual (Disponible: ${prod.stock_actual})`,
           )
         } else if (Number(prod.stock_actual) - Number(item.cantidad) <= Number(prod.stock_minimo)) {
           alertasStock.value.push(`AVISO: "${prod.nombre}" quedará por debajo del stock mínimo.`)
@@ -357,8 +363,6 @@ const totalOrden = computed(() => {
 })
 
 const beneficioNeto = computed(() => {
-  // El beneficio es lo que cobramos menos lo que nos costó el material
-  // (La mano de obra y envío se consideran cobros que cubren costos o servicios)
   return totalVentaMateriales.value - totalCostoInternoMateriales.value
 })
 
@@ -368,11 +372,7 @@ const margenUtilidad = computed(() => {
 })
 
 const esValida = computed(() => {
-  return (
-    orden.value.cliente_id &&
-    orden.value.materiales.length > 0 &&
-    alertasStock.value.every((a) => !a.startsWith('¡ERROR!'))
-  )
+  return orden.value.cliente_id && orden.value.materiales.length > 0
 })
 
 // --- MÉTODOS ---
@@ -395,7 +395,7 @@ const agregarFila = () => {
     producto_id: '',
     cantidad: 1,
     precio_venta: 0,
-    costo_unitario: 0, // Guardamos costo interno para análisis
+    costo_unitario: 0,
   })
 }
 
@@ -435,11 +435,11 @@ const generarOrden = async () => {
     }
 
     await api.post('/ordenes', payload)
-    alert('Presupuesto confirmado y stock descontado con éxito.')
+    alert('Cotización creada exitosamente.')
     router.push('/ordenes')
   } catch (err) {
     console.error('Error al generar orden:', err)
-    alert(err.response?.data?.error || 'Error al procesar la orden. Verifica el stock.')
+    alert(err.response?.data?.error || 'Error al procesar la cotización.')
   } finally {
     procesando.value = false
   }
@@ -447,7 +447,7 @@ const generarOrden = async () => {
 
 onMounted(cargarDatos)
 </script>
-<style scoped="">
+<style scoped>
 @keyframes spin {
   to {
     transform: rotate(360deg);

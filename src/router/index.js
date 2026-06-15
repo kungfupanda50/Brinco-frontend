@@ -1,7 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Definición de las rutas del sistema Brinco Creativo - Versión Integral Consolidada
 const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: 'Acceso al Sistema', public: true },
+  },
   {
     path: '/',
     name: 'Dashboard',
@@ -90,10 +95,27 @@ const router = createRouter({
   },
 })
 
+// === SISTEMA DE PROTECCIÓN DE RUTAS (NUEVO) ===
 router.beforeEach((to, from, next) => {
+  const isAuth = localStorage.getItem('auth_brinco') === 'true'
+
+  // Establecer título dinámico
   const baseTitle = 'Brinco Creativo'
   document.title = to.meta.title ? `${to.meta.title} | ${baseTitle}` : baseTitle
-  next()
+
+  // Lógica de acceso
+  if (!to.meta.public && !isAuth) {
+    console.warn(`[ROUTER] Acceso denegado a "${to.path}". Redirigiendo a Login.`)
+    next('/login')
+  } else if (to.name === 'Login' && isAuth) {
+    next('/')
+  } else {
+    next()
+  }
+})
+
+router.afterEach((to) => {
+  console.log(`[ROUTER] Navegación exitosa: ${to.path}`)
 })
 
 export default router
