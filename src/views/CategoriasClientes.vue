@@ -313,7 +313,9 @@ const guardar = async () => {
     cerrarModal()
   } catch (err) {
     console.error('Error al guardar:', err)
-    alert('Error técnico al intentar guardar la categoría.')
+    // Extraer el mensaje específico del backend
+    const mensaje = err.response?.data?.error || 'Error técnico al intentar guardar la categoría.'
+    alert(mensaje)
   } finally {
     guardando.value = false
   }

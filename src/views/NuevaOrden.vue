@@ -284,7 +284,7 @@
             v-if="procesando"
           ></span>
           <span class="material-icons" v-else>task_alt</span>
-          {{ procesando ? 'PROCESANDO...' : 'CONFIRMAR PRESUPUESTO' }}
+          {{ procesando ? 'PROCESANDO...' : 'CONFIRMAR ORDEN' }}
         </button>
         <p class="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
           Esta acción NO afecta el stock. El descuento se realiza manualmente en el tablero.
@@ -435,11 +435,11 @@ const generarOrden = async () => {
     }
 
     await api.post('/ordenes', payload)
-    alert('Cotización creada exitosamente.')
+    alert('Órden creada exitosamente.')
     router.push('/ordenes')
   } catch (err) {
     console.error('Error al generar orden:', err)
-    alert(err.response?.data?.error || 'Error al procesar la cotización.')
+    alert(err.response?.data?.error || 'Error al procesar la órden.')
   } finally {
     procesando.value = false
   }

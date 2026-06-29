@@ -1,39 +1,87 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import api from './api/axios'
 
 const router = useRouter()
 const route = useRoute()
 const sidebarOpen = ref(true)
+const user = ref({})
 
-// Lógica de Autenticación Básica
-const isLoggedIn = computed(() => localStorage.getItem('auth_brinco') === 'true')
+const cargarUsuario = () => {
+  try {
+    user.value = JSON.parse(localStorage.getItem('user_brinco') || '{}')
+  } catch {
+    user.value = {}
+  }
+}
+
+const cargarUsuarioDesdeToken = async () => {
+  const token = localStorage.getItem('auth_token')
+  if (!token) return
+  try {
+    const response = await api.get('/me')
+    localStorage.setItem('user_brinco', JSON.stringify(response.data))
+    user.value = response.data
+  } catch {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_brinco')
+    router.push('/login')
+  }
+}
+
+onMounted(() => {
+  cargarUsuario()
+  cargarUsuarioDesdeToken()
+})
+
+watch(
+  () => route.fullPath,
+  () => cargarUsuario(),
+)
+
+const allMenuItems = [
+  { name: 'Dashboard', path: '/', icon: 'dashboard', permiso: 'p_dashboard' },
+  { name: 'Clientes', path: '/clientes', icon: 'people', permiso: 'p_clientes' },
+  { name: 'Órdenes', path: '/ordenes', icon: 'assignment', permiso: 'p_ordenes' },
+  { name: 'Nueva Orden', path: '/nueva-orden', icon: 'add_box', permiso: 'p_nueva_orden' },
+  { name: 'Inventario', path: '/inventario', icon: 'inventory_2', permiso: 'p_inventario' },
+  { name: 'Proveedores', path: '/proveedores', icon: 'local_shipping', permiso: 'p_proveedores' },
+  {
+    name: 'Entrada Mercancía',
+    path: '/entrada-mercancia',
+    icon: 'input',
+    permiso: 'p_entrada_mercancia',
+  },
+  { name: 'Caja y Pagos', path: '/caja', icon: 'attach_money', permiso: 'p_caja' },
+  {
+    name: 'Categorías Clientes',
+    path: '/clientes/categorias',
+    icon: 'groups',
+    permiso: 'p_cat_clientes',
+  },
+  {
+    name: 'Categorías Productos',
+    path: '/categorias',
+    icon: 'category',
+    permiso: 'p_cat_productos',
+  },
+  { name: 'Usuarios', path: '/usuarios', icon: 'admin_panel_settings', permiso: 'p_usuarios' },
+]
+
+const menuItems = computed(() => {
+  const permisos = user.value || {}
+  return allMenuItems.filter((item) => permisos[item.permiso] === 1)
+})
+
+const isLoggedIn = computed(() => !!localStorage.getItem('auth_token'))
 const showSidebar = computed(() => route.name !== 'Login')
 
 const logout = () => {
-  localStorage.removeItem('auth_brinco')
+  localStorage.removeItem('auth_token')
   localStorage.removeItem('user_brinco')
   router.push('/login')
 }
-
-// LOG REFORZADO DE NAVEGACIÓN
-const logNavigation = (item) => {
-  console.warn(`!!! [NAVEGACIÓN] Yendo a: ${item.name}`)
-}
-
-const menuItems = [
-  { name: 'Dashboard', path: '/', icon: 'dashboard' },
-  { name: 'Clientes', path: '/clientes', icon: 'people' },
-  { name: 'Órdenes', path: '/ordenes', icon: 'assignment' },
-  { name: 'Nueva Orden', path: '/nueva-orden', icon: 'add_box' },
-  { name: 'Inventario', path: '/inventario', icon: 'inventory_2' },
-  { name: 'Proveedores', path: '/proveedores', icon: 'local_shipping' },
-  { name: 'Entrada Mercancía', path: '/entrada-mercancia', icon: 'input' },
-  { name: 'Caja y Pagos', path: '/caja', icon: 'attach_money' },
-  { name: 'Categorías de Clientes', path: '/clientes/categorias', icon: 'groups' },
-  { name: 'Categorías de Productos', path: '/categorias', icon: 'category' },
-  { name: 'Usuarios', path: '/usuarios', icon: 'admin_panel_settings' },
-]
 </script>
 
 <template>

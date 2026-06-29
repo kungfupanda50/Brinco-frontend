@@ -536,7 +536,8 @@ const guardarInsumo = async () => {
 
 const cambiarEstatus = async (id, nuevoEstado) => {
   try {
-    await api.put(`/inventario/${id}`, { activo: nuevoEstado })
+    // Usamos la nueva ruta PATCH en lugar del PUT general
+    await api.patch(`/inventario/${id}/estado`, { activo: nuevoEstado })
     await cargarInventario()
   } catch (err) {
     alert('Error técnico al actualizar el estado.')

@@ -46,6 +46,22 @@
       </div>
     </header>
 
+    <!-- BARRA SUPERIOR DE FILTROS (Cliente) -->
+    <div class="mb-6 flex justify-end items-center gap-4">
+      <div class="flex flex-col gap-1 w-full md:w-72">
+        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
+          >Filtrar por Cliente</label
+        >
+        <select
+          v-model="clienteSeleccionado"
+          class="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-bold text-slate-700 shadow-sm transition-all"
+        >
+          <option :value="null">Todos los Clientes</option>
+          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nombre_completo }}</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Estados de Carga -->
     <div
       v-if="cargando"
@@ -83,6 +99,8 @@
             @mover="actualizarEstado"
             @rebajar="rebajarExistencias"
             @rechazar="rechazarPresupuesto"
+            @abrir-presupuesto="abrirPresupuesto"
+            @editar-materiales="abrirEditarMateriales"
             :procesando="actualizandoId === orden.id"
             column="Pendiente"
           />
@@ -173,76 +191,57 @@
     </div>
 
     <!-- MODAL DE EVIDENCIAS -->
-    <div v-if="modalEvidencias" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div
-        @click="modalEvidencias = false"
-        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-      ></div>
-      <div
-        class="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
-      >
-        <header class="p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-          <div>
-            <h2 class="text-2xl font-black text-slate-900">Evidencias de Trabajo</h2>
-            <p class="text-[10px] font-black text-[#06b6d4] uppercase tracking-widest mt-1">
-              Órden #BC-{{ seleccionada?.id }}
-            </p>
-          </div>
-          <button @click="modalEvidencias = false" class="material-icons text-slate-400">
-            close
-          </button>
-        </header>
-        <div class="p-8 space-y-6">
-          <div class="grid grid-cols-3 gap-4">
-            <div
-              v-for="n in 3"
-              :key="n"
-              class="aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center relative overflow-hidden group"
-            >
-              <input
-                type="file"
-                @change="(e) => manejarArchivo(e, n - 1)"
-                class="absolute inset-0 opacity-0 cursor-pointer z-10"
-                accept="image/*"
-              />
-              <img
-                v-if="fotosNuevas[n - 1]"
-                :src="urlPrevia(fotosNuevas[n - 1])"
-                class="w-full h-full object-cover"
-              />
-              <span
-                v-else
-                class="material-icons text-slate-300 group-hover:text-[#06b6d4] transition-colors"
-                >add_a_photo</span
-              >
-            </div>
-          </div>
-          <button
-            @click="subirFotos"
-            :disabled="subiendo"
-            class="w-full py-4 bg-[#06b6d4] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-          >
-            <span
-              v-if="subiendo"
-              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
-            ></span>
-            <span v-else class="material-icons text-sm">cloud_upload</span>
-            {{ subiendo ? 'SUBIENDO...' : 'GUARDAR EVIDENCIAS' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ModalEvidencias v-model="modalEvidencias" :orden="seleccionada" @actualizado="cargarOrdenes" />
+
+    <!-- MODAL DE PRESUPUESTO -->
+    <Presupuesto
+      v-if="mostrarModalPresupuesto"
+      :cliente-id="ordenSeleccionada.cliente_id"
+      :orden-id="ordenSeleccionada.id"
+      @cerrar="mostrarModalPresupuesto = false"
+    />
+
+    <!-- MODAL EDITAR MATERIALES -->
+    <ModalEditarMateriales
+      v-if="mostrarModalMateriales"
+      :orden-id="ordenEditarMaterialesId"
+      @cerrar="mostrarModalMateriales = false"
+      @actualizado="cargarOrdenes"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, defineComponent, h } from 'vue'
 import api from '../api/axios'
+import ModalEvidencias from '../components/ModalEvidencias.vue'
+import Presupuesto from './Presupuesto.vue'
+import ModalEditarMateriales from './ModalEditarMateriales.vue' // Asegúrate de que el archivo esté en esta carpeta 'views'
+
+// Variables para el modal de presupuesto
+const mostrarModalPresupuesto = ref(false)
+const ordenSeleccionada = ref({})
+
+// Variables para el modal de editar materiales
+const mostrarModalMateriales = ref(false)
+const ordenEditarMaterialesId = ref(null)
+
+// Función al hacer clic en el botón
+const abrirPresupuesto = (orden) => {
+  ordenSeleccionada.value = orden
+  mostrarModalPresupuesto.value = true
+}
+
+// Función al hacer clic en editar materiales
+const abrirEditarMateriales = (id) => {
+  ordenEditarMaterialesId.value = id
+  mostrarModalMateriales.value = true
+}
 
 // --- TARJETA DE ORDEN (COMPONENT INTERNO) ---
 const CardOrden = defineComponent({
   props: ['orden', 'column', 'procesando'],
-  emits: ['mover', 'rebajar', 'rechazar', 'evidencias'],
+  emits: ['mover', 'rebajar', 'rechazar', 'evidencias', 'abrir-presupuesto', 'editar-materiales'],
   setup(props, { emit }) {
     const formatCurrency = (val) =>
       Number(val).toLocaleString('es-GT', { minimumFractionDigits: 2 })
@@ -376,17 +375,29 @@ const CardOrden = defineComponent({
                 )
               : h('div'),
 
-            // BOTONES CENTRALES: REBAJAR O EVIDENCIAS
+            // BOTONES CENTRALES: EDITAR MATERIALES, REBAJAR O EVIDENCIAS
             props.column === 'Pendiente' && !props.orden.stock_rebajado
-              ? h(
-                  'button',
-                  {
-                    onClick: () => emit('rebajar', props.orden.id),
-                    class:
-                      'px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase',
-                  },
-                  'REBAJAR STOCK',
-                )
+              ? h('div', { class: 'flex gap-2 items-center' }, [
+                  h(
+                    'button',
+                    {
+                      onClick: () => emit('editar-materiales', props.orden.id),
+                      class:
+                        'p-2 bg-slate-100 text-slate-500 hover:text-[#06b6d4] rounded-xl text-[9px] font-black uppercase flex items-center gap-1',
+                      title: 'Editar Materiales',
+                    },
+                    [h('span', { class: 'material-icons text-sm' }, 'edit_note')],
+                  ),
+                  h(
+                    'button',
+                    {
+                      onClick: () => emit('rebajar', props.orden.id),
+                      class:
+                        'px-3 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase',
+                    },
+                    'REBAJAR STOCK',
+                  ),
+                ])
               : props.column === 'Finalizadas'
                 ? h(
                     'button',
@@ -412,6 +423,19 @@ const CardOrden = defineComponent({
                       class: 'p-2 text-red-200 hover:text-red-500',
                     },
                     [h('span', { class: 'material-icons' }, 'close')],
+                  )
+                : null,
+
+              // BOTÓN GENERAR PRESUPUESTO
+              props.column === 'Pendiente'
+                ? h(
+                    'button',
+                    {
+                      onClick: () => emit('abrir-presupuesto', props.orden),
+                      class: 'p-2 text-slate-400 hover:text-[#06b6d4] rounded-xl',
+                      title: 'Generar Cotización',
+                    },
+                    [h('span', { class: 'material-icons' }, 'description')],
                   )
                 : null,
 
@@ -453,6 +477,10 @@ const cargando = ref(true)
 const actualizandoId = ref(null)
 const ocultarEntregadas = ref(true)
 
+// Estado para el filtro de clientes
+const clientes = ref([])
+const clienteSeleccionado = ref(null)
+
 // MODAL EVIDENCIAS
 const modalEvidencias = ref(false)
 const seleccionada = ref(null)
@@ -471,6 +499,16 @@ const cargarOrdenes = async () => {
   }
 }
 
+// Cargar lista de clientes para el filtro
+const cargarClientes = async () => {
+  try {
+    const response = await api.get('/clientes')
+    clientes.value = response.data
+  } catch (err) {
+    console.error('Error al cargar clientes:', err)
+  }
+}
+
 const actualizarEstado = async (id, nuevoEstado) => {
   try {
     actualizandoId.value = id
@@ -484,10 +522,22 @@ const actualizarEstado = async (id, nuevoEstado) => {
 }
 
 const rechazarPresupuesto = async (id) => {
-  if (!confirm('¿Rechazar esta cotización?')) return
+  const orden = ordenes.value.find((o) => o.id === id)
+  const stockRebajado = orden?.stock_rebajado
+
+  const mensaje = stockRebajado
+    ? '⚠️ Esta orden ya tiene stock descontado del inventario.\n\nAl cancelarla se DEVOLVERÁ el stock automáticamente.\n\n¿Confirmas la cancelación?'
+    : '¿Rechazar esta cotización?'
+
+  if (!confirm(mensaje)) return
+
   try {
     actualizandoId.value = id
-    await api.patch(`/ordenes/${id}/estado`, { estado: 'Cancelado' }) // Mapeo seguro a la DB
+    if (stockRebajado) {
+      await api.post(`/ordenes/${id}/devolver-stock`)
+    } else {
+      await api.patch(`/ordenes/${id}/estado`, { estado: 'Cancelado' })
+    }
     await cargarOrdenes()
   } catch (err) {
     alert('Fallo al rechazar.')
@@ -542,19 +592,32 @@ const subirFotos = async () => {
   }
 }
 
-const ordenesPendientes = computed(() => ordenes.value.filter((o) => o.estado === 'Pendiente'))
-const ordenesProduccion = computed(() => ordenes.value.filter((o) => o.estado === 'En Producción'))
+// Computed que filtra las órdenes según el cliente seleccionado
+const ordenesFiltradas = computed(() => {
+  if (!clienteSeleccionado.value) return ordenes.value
+  return ordenes.value.filter((o) => o.cliente_id === clienteSeleccionado.value)
+})
+
+const ordenesPendientes = computed(() =>
+  ordenesFiltradas.value.filter((o) => o.estado === 'Pendiente'),
+)
+const ordenesProduccion = computed(() =>
+  ordenesFiltradas.value.filter((o) => o.estado === 'En Producción'),
+)
 const ordenesFinalizadas = computed(() => {
-  const base = ordenes.value.filter((o) =>
+  const base = ordenesFiltradas.value.filter((o) =>
     ['Listo para Envío', 'Enviado', 'Entregado'].includes(o.estado),
   )
   return ocultarEntregadas.value ? base.filter((o) => o.estado !== 'Entregado') : base
 })
 const ordenesRechazadas = computed(() =>
-  ordenes.value.filter((o) => o.estado === 'Cancelado' || o.estado === 'Rechazado'),
+  ordenesFiltradas.value.filter((o) => o.estado === 'Cancelado' || o.estado === 'Rechazado'),
 )
 
-onMounted(cargarOrdenes)
+onMounted(async () => {
+  await cargarClientes()
+  await cargarOrdenes()
+})
 </script>
 
 <style scoped>

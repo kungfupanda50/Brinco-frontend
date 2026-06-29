@@ -375,7 +375,8 @@ const guardar = async () => {
     await cargarDatos()
     cerrarModal()
   } catch (err) {
-    alert('Error al guardar')
+    const mensaje = err.response?.data?.error || 'Error al guardar la categoría.'
+    alert(mensaje)
   } finally {
     guardando.value = false
   }

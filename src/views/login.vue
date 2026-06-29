@@ -6,17 +6,6 @@
 
     <div class="login-card-container">
       <div class="login-card shadow-2xl animate-in fade-in zoom-in duration-500">
-        <!-- Botón de Bypass para soporte técnico -->
-        <button
-          @click="bypassLogin"
-          class="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50/50 backdrop-blur-sm text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center group z-20"
-          title="Bypass Técnico"
-        >
-          <span class="material-icons text-sm group-hover:rotate-90 transition-transform"
-            >close</span
-          >
-        </button>
-
         <div class="login-header">
           <!-- ÁREA DE AVATAR REDISEÑADA (v3.8: Sin cuadros vacíos) -->
           <div class="avatar-view-master mb-8">
@@ -171,15 +160,6 @@
 </template>
 
 <script setup>
-/**
- * LOGIN.VUE v3.8 - COMPONENTE DE ACCESO INTELIGENTE
- *
- * Mejoras en esta versión:
- * - Rediseño de estados vacíos del Avatar (Visualización Profesional).
- * - Animaciones de transición fluida para carga de perfil.
- * - Feedback visual táctico en campos de entrada.
- * - Optimización de balance en la tarjeta para mobile/desktop.
- */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/axios'
@@ -188,17 +168,12 @@ const router = useRouter()
 const credenciales = ref({ usuario: '', password: '' })
 const cargando = ref(false)
 const error = ref('')
-
 const apiBase = 'http://localhost:3000'
 const userAvatar = ref(null)
 const userName = ref('')
 const userRol = ref('')
 const typingTimer = ref(null)
 
-/**
- * HandleUserTyping: Realiza búsqueda dinámica del perfil
- * Aplica debounce de 500ms para eficiencia de peticiones.
- */
 const handleUserTyping = () => {
   clearTimeout(typingTimer.value)
   if (!credenciales.value.usuario || credenciales.value.usuario.length < 2) {
@@ -207,7 +182,6 @@ const handleUserTyping = () => {
     userRol.value = ''
     return
   }
-
   typingTimer.value = setTimeout(async () => {
     try {
       const response = await api.get(`/usuarios/perfil/${credenciales.value.usuario}`)
@@ -218,7 +192,7 @@ const handleUserTyping = () => {
       } else {
         resetProfile()
       }
-    } catch (err) {
+    } catch {
       resetProfile()
     }
   }, 500)
@@ -230,19 +204,17 @@ const resetProfile = () => {
   userRol.value = ''
 }
 
-/**
- * HandleLogin: Envío formal de credenciales
- */
 const handleLogin = async () => {
   try {
     cargando.value = true
     error.value = ''
-
     const response = await api.post('/login', credenciales.value)
-
     if (response.data.success) {
-      localStorage.setItem('auth_brinco', 'true')
-      localStorage.setItem('user_brinco', JSON.stringify(response.data.user))
+      const { token, user } = response.data
+      const flatUser = { ...user, ...user.permisos }
+      delete flatUser.permisos
+      localStorage.setItem('auth_token', token)
+      localStorage.setItem('user_brinco', JSON.stringify(flatUser))
       router.push('/')
     }
   } catch (err) {
@@ -250,19 +222,6 @@ const handleLogin = async () => {
   } finally {
     cargando.value = false
   }
-}
-
-/**
- * BypassLogin: Salto de seguridad para depuración controlada
- */
-const bypassLogin = () => {
-  console.warn('!!! [BYPASS ACTIVADO] Saltando seguridad por petición de usuario.')
-  localStorage.setItem('auth_brinco', 'true')
-  localStorage.setItem(
-    'user_brinco',
-    JSON.stringify({ nombre: 'Admin Bypass', rol: 'Administrador' }),
-  )
-  router.push('/')
 }
 </script>
 
