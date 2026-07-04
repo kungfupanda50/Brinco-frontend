@@ -400,7 +400,7 @@ import { ref, computed, onMounted } from 'vue'
 import api from '../api/axios'
 
 // --- CONFIGURACIÓN ---
-const apiBase = 'http://localhost:3000'
+// Ya no necesitamos apiBase porque Cloudinary nos dará una URL completa (https://...)
 const mapaPermisos = {
   p_dashboard: 'Panel de Control',
   p_clientes: 'Módulo Clientes',
@@ -526,30 +526,29 @@ const guardarUsuario = async () => {
       currentId = res.data.id
     }
 
-    // Subida de Avatar si existe archivo nuevo
-const subirAvatar = async (event, usuario) => {
-  const file = event.target.files[0];
-  if (!file) return;
+    // Si el usuario seleccionó una foto nueva, la subimos a Cloudinary
+    if (avatarFile.value) {
+      const formData = new FormData()
+      formData.append('avatar', avatarFile.value)
 
-  const formData = new FormData();
-  formData.append('avatar', file);
+      const { data } = await api.post(`/usuarios/${currentId}/avatar`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
 
-  try {
-    const { data } = await api.post(`/usuarios/${usuario.id}/avatar`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+      // Actualizamos la URL en el objeto local para que la vista cambie al instante
+      formulario.value.avatar_url = data.url
+    }
 
-    // 1. Actualizamos la URL del avatar en el objeto del usuario local
-    usuario.avatar_url = data.url;
-
-    // 2. Forzamos a Vue a recargar la lista de usuarios para que pinte la nueva URL
-    await cargarUsuarios(); // Llama a la función que trae la lista de la DB
-
-    alert('Avatar actualizado correctamente');
+    await cargarUsuarios()
+    cerrarModal()
+    alert('Usuario guardado con éxito')
   } catch (err) {
-    alert('Error al subir el avatar');
+    console.error('Error al guardar:', err)
+    alert('Error al guardar el usuario.')
+  } finally {
+    guardando.value = false
   }
-};
+}
 
 onMounted(cargarUsuarios)
 </script>
