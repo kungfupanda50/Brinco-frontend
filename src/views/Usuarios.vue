@@ -527,23 +527,29 @@ const guardarUsuario = async () => {
     }
 
     // Subida de Avatar si existe archivo nuevo
-    if (avatarFile.value) {
-      const formData = new FormData()
-      formData.append('avatar', avatarFile.value)
-      await api.post(`/usuarios/${currentId}/avatar`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-    }
+const subirAvatar = async (event, usuario) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    await cargarUsuarios()
-    cerrarModal()
-    alert('Usuario procesado correctamente.')
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  try {
+    const { data } = await api.post(`/usuarios/${usuario.id}/avatar`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    // 1. Actualizamos la URL del avatar en el objeto del usuario local
+    usuario.avatar_url = data.url;
+
+    // 2. Forzamos a Vue a recargar la lista de usuarios para que pinte la nueva URL
+    await cargarUsuarios(); // Llama a la función que trae la lista de la DB
+
+    alert('Avatar actualizado correctamente');
   } catch (err) {
-    alert(err.response?.data?.error || 'Error técnico al guardar.')
-  } finally {
-    guardando.value = false
+    alert('Error al subir el avatar');
   }
-}
+};
 
 onMounted(cargarUsuarios)
 </script>
