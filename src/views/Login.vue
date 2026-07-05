@@ -19,7 +19,7 @@
                   <img
                     v-if="userAvatar"
                     :key="'loaded-' + credenciales.usuario"
-                    :src="apiBase + userAvatar"
+                    :src="perfil.avatar_url"
                     class="w-full h-full object-cover"
                     alt="Perfil"
                   />
@@ -168,7 +168,7 @@ const router = useRouter()
 const credenciales = ref({ usuario: '', password: '' })
 const cargando = ref(false)
 const error = ref('')
-const apiBase = 'http://localhost:3000'
+// const apiBase = 'http://localhost:3000'
 const userAvatar = ref(null)
 const userName = ref('')
 const userRol = ref('')
