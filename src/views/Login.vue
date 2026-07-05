@@ -17,22 +17,15 @@
                 <transition name="avatar-fade" mode="out-in">
                   <!-- Fotografía Real del Usuario -->
                   <img
-                    v-if="userAvatar"
-                    :key="'loaded-' + credenciales.usuario"
+                    v-if="perfil && perfil.avatar_url"
+                    :key="perfil.avatar_url"
                     :src="perfil.avatar_url"
                     class="w-full h-full object-cover"
-                    alt="Perfil"
+                    alt="Foto de perfil"
                   />
-                  <!-- Silueta de espera con branding (v3.8) -->
-                  <div
-                    v-else
-                    :key="'placeholder'"
-                    class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-200"
-                  >
-                    <span class="material-icons text-7xl opacity-50">account_circle</span>
-                    <div
-                      class="absolute inset-0 bg-gradient-to-t from-slate-100/50 to-transparent"
-                    ></div>
+                  <!-- Icono por defecto si no hay foto o no ha escrito el usuario -->
+                  <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+                    <span class="material-icons text-6xl">person</span>
                   </div>
                 </transition>
               </div>
