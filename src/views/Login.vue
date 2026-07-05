@@ -17,9 +17,9 @@
                 <transition name="avatar-fade" mode="out-in">
                   <!-- Fotografía Real del Usuario -->
                   <img
-                    v-if="perfil && perfil.avatar_url"
-                    :key="perfil.avatar_url"
-                    :src="perfil.avatar_url"
+                    v-if="userAvatar"
+                    :key="userAvatar"
+                    :src="userAvatar"
                     class="w-full h-full object-cover"
                     alt="Foto de perfil"
                   />
