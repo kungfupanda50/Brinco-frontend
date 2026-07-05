@@ -10,6 +10,15 @@
           <!-- ÁREA DE AVATAR REDISEÑADA (v3.8: Sin cuadros vacíos) -->
           <div class="avatar-view-master mb-8">
             <div class="relative inline-block">
+              <p class="text-red-500 font-bold bg-white p-2 z-50 absolute">{{ userAvatar }}</p>
+
+              <div class="w-36 h-36 rounded-[2.5rem] bg-gradient-to-br...">
+                <transition name="avatar-fade" mode="out-in">
+                  <img v-if="userAvatar" :src="userAvatar" ... />
+                  <div v-else ...>...</div>
+                </transition>
+              </div>
+
               <div
                 class="w-36 h-36 rounded-[2.5rem] bg-gradient-to-br from-slate-50 to-slate-100 border-4 border-white shadow-2xl overflow-hidden flex items-center justify-center transition-all duration-700 transform"
                 :class="{ 'scale-110 shadow-cyan-500/20 ring-8 ring-cyan-50': userAvatar }"
