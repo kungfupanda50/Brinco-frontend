@@ -103,9 +103,7 @@
             <div class="relative">
               <div
                 class="w-24 h-24 rounded-[2rem] bg-slate-50 border-4 border-white shadow-md flex items-center justify-center overflow-hidden bg-cover bg-center"
-                :style="
-                  user.avatar_url ? `background-image: url('${apiBase}${user.avatar_url}')` : ''
-                "
+                :style="user.avatar_url ? `background-image: url('${user.avatar_url}')` : ''"
               >
                 <span
                   v-if="!user.avatar_url"
@@ -220,7 +218,7 @@
                       avatarPreview
                         ? `background-image: url('${avatarPreview}')`
                         : formulario.avatar_url
-                          ? `background-image: url('${apiBase}${formulario.avatar_url}')`
+                          ? `background-image: url('${formulario.avatar_url}')`
                           : ''
                     "
                   >
