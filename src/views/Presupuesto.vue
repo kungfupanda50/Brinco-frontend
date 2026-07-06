@@ -651,21 +651,28 @@ const guardarPresupuesto = async () => {
   if (presupuestoSeleccionado.value) {
     guardando.value = true
     try {
-      // Si el checkbox está marcado, actualizamos la fecha en BD
       if (actualizarFecha.value) {
         await api.put(`/presupuestos/${presupuestoSeleccionado.value}/fecha`)
       }
 
-      // Generar PDF
+      // Pedimos el HTML al backend
       const response = await api.get(`/presupuestos/${presupuestoSeleccionado.value}/pdf`, {
-        responseType: 'blob',
+        responseType: 'text', // Importante: lo recibimos como texto (HTML)
       })
-      const file = new Blob([response.data], { type: 'application/pdf' })
-      const fileURL = URL.createObjectURL(file)
-      window.open(fileURL, '_blank')
+
+      // Abrimos una ventana nueva y le inyectamos el HTML
+      const printWindow = window.open('', '_blank')
+      printWindow.document.write(response.data)
+      printWindow.document.close()
+
+      // Esperamos a que cargue las imágenes y abrimos el diálogo de impresión
+      printWindow.onload = function () {
+        printWindow.print()
+      }
+
       emit('cerrar')
     } catch (err) {
-      alert('Error al reimprimir el PDF.')
+      alert('Error al generar el documento.')
       console.error(err)
     } finally {
       guardando.value = false
@@ -683,17 +690,23 @@ const guardarPresupuesto = async () => {
       orden_id: props.ordenId,
     })
 
+    // Pedimos el HTML al backend
     const response = await api.get(`/presupuestos/${data.id}/pdf`, {
-      responseType: 'blob',
+      responseType: 'text',
     })
 
-    const file = new Blob([response.data], { type: 'application/pdf' })
-    const fileURL = URL.createObjectURL(file)
-    window.open(fileURL, '_blank')
+    // Abrimos una ventana nueva y le inyectamos el HTML
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(response.data)
+    printWindow.document.close()
+
+    printWindow.onload = function () {
+      printWindow.print()
+    }
 
     emit('cerrar')
   } catch (err) {
-    alert('Error al guardar el presupuesto o generar el PDF.')
+    alert('Error al guardar el presupuesto.')
     console.error(err)
   } finally {
     guardando.value = false
