@@ -271,7 +271,7 @@
                           : 'border-slate-200'
                       "
                     >
-                      <img :src="baseUrl + img.url" class="w-full h-full object-cover" />
+                      <img :src="img.url" class="w-full h-full object-cover" />
 
                       <!-- Botón para alternar tamaño -->
                       <button
@@ -332,7 +332,7 @@
                     img.grande ? 'border-[#06b6d4] ring-2 ring-[#06b6d4]/30' : 'border-slate-100'
                   "
                 >
-                  <img :src="baseUrl + img.url" class="w-full h-full object-cover" />
+                  <img :src="img.url" class="w-full h-full object-cover" />
 
                   <!-- Botón para alternar tamaño -->
                   <button
@@ -468,8 +468,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import api from '../api/axios'
-
-const baseUrl = 'http://localhost:3000'
 
 const props = defineProps({
   clienteId: { type: Number, required: true },
