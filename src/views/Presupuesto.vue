@@ -650,28 +650,23 @@ const guardarPresupuesto = async () => {
   // MODO REIMPRESIÓN
   if (presupuestoSeleccionado.value) {
     guardando.value = true
+    // Abrimos la ventana inmediatamente para evitar el bloqueador de pop-ups
+    const printWindow = window.open('', '_blank')
     try {
       if (actualizarFecha.value) {
         await api.put(`/presupuestos/${presupuestoSeleccionado.value}/fecha`)
       }
-
-      // Pedimos el HTML al backend
       const response = await api.get(`/presupuestos/${presupuestoSeleccionado.value}/pdf`, {
-        responseType: 'text', // Importante: lo recibimos como texto (HTML)
+        responseType: 'text',
       })
-
-      // Abrimos una ventana nueva y le inyectamos el HTML
-      const printWindow = window.open('', '_blank')
       printWindow.document.write(response.data)
       printWindow.document.close()
-
-      // Esperamos a que cargue las imágenes y abrimos el diálogo de impresión
       printWindow.onload = function () {
         printWindow.print()
       }
-
       emit('cerrar')
     } catch (err) {
+      printWindow.close() // Si falla, cerramos la ventanita vacía
       alert('Error al generar el documento.')
       console.error(err)
     } finally {
@@ -681,6 +676,9 @@ const guardarPresupuesto = async () => {
   }
 
   // MODO CREACIÓN NORMAL
+  // Abrimos la ventana inmediatamente para evitar el bloqueador de pop-ups
+  const printWindow = window.open('', '_blank')
+
   guardando.value = true
   calcularTotales()
   try {
@@ -690,22 +688,18 @@ const guardarPresupuesto = async () => {
       orden_id: props.ordenId,
     })
 
-    // Pedimos el HTML al backend
     const response = await api.get(`/presupuestos/${data.id}/pdf`, {
       responseType: 'text',
     })
 
-    // Abrimos una ventana nueva y le inyectamos el HTML
-    const printWindow = window.open('', '_blank')
     printWindow.document.write(response.data)
     printWindow.document.close()
-
     printWindow.onload = function () {
       printWindow.print()
     }
-
     emit('cerrar')
   } catch (err) {
+    printWindow.close() // Si falla, cerramos la ventanita vacía
     alert('Error al guardar el presupuesto.')
     console.error(err)
   } finally {
