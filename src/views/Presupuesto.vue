@@ -480,7 +480,6 @@ const guardando = ref(false)
 const plantillas = ref([])
 const monedas = ref([])
 
-// NUEVAS VARIABLES PARA HISTORIAL
 const historialPresupuestos = ref([])
 const presupuestoSeleccionado = ref(null)
 const actualizarFecha = ref(false)
@@ -545,7 +544,6 @@ onMounted(async () => {
     agregarLinea()
     calcularTotales()
 
-    // CARGAR HISTORIAL AL INICIAR
     await fetchHistorial()
   } catch (err) {
     console.error('Error cargando datos iniciales:', err)
@@ -628,13 +626,10 @@ const generarIA = async (index) => {
     presupuesto.lineas[index].descripcion = data.descripcion
   } catch (err) {
     console.error('Error detallado de la IA:', err.response?.data || err.message)
-
-    // Si el backend nos mandó un error específico, se lo mostramos al usuario en un alert
     if (err.response && err.response.data && err.response.data.error) {
       alert(
         `Aviso de la IA: ${err.response.data.error}\n\nSe ha colocado un texto de respaldo. Puedes editarlo manualmente.`,
       )
-      // Ponemos el texto de respaldo que nos mandó el backend
       if (err.response.data.descripcion) {
         presupuesto.lineas[index].descripcion = err.response.data.descripcion
       }
@@ -650,7 +645,6 @@ const guardarPresupuesto = async () => {
   // MODO REIMPRESIÓN
   if (presupuestoSeleccionado.value) {
     guardando.value = true
-    // Abrimos la ventana inmediatamente para evitar el bloqueador de pop-ups
     const printWindow = window.open('', '_blank')
     try {
       if (actualizarFecha.value) {
@@ -658,6 +652,7 @@ const guardarPresupuesto = async () => {
       }
       const response = await api.get(`/presupuestos/${presupuestoSeleccionado.value}/pdf`, {
         responseType: 'text',
+        timeout: 60000,
       })
       printWindow.document.write(response.data)
       printWindow.document.close()
@@ -666,8 +661,8 @@ const guardarPresupuesto = async () => {
       }
       emit('cerrar')
     } catch (err) {
-      printWindow.close() // Si falla, cerramos la ventanita vacía
-      alert('Error al generar el documento.')
+      printWindow.close()
+      alert('El servidor estaba despertando. Inténtalo de nuevo en 3 segundos.')
       console.error(err)
     } finally {
       guardando.value = false
@@ -676,33 +671,35 @@ const guardarPresupuesto = async () => {
   }
 
   // MODO CREACIÓN NORMAL
-  // Abrimos la ventana inmediatamente para evitar el bloqueador de pop-ups
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
-    alert("Por favor, permite las ventanas emergentes para poder generar el PDF.")
-    guardando.value = false
+    alert('Por favor, permite las ventanas emergentes para poder generar el PDF.')
     return
   }
 
   guardando.value = true
   calcularTotales()
   try {
-    // 1. Guardamos en la BD (con un timeout de 60s para esperar a que Render despierte)
-    const { data } = await api.post('/presupuestos', {
-      ...presupuesto,
-      cliente_id: props.clienteId,
-      orden_id: props.ordenId,
-    }, { timeout: 60000 })
+    const { data } = await api.post(
+      '/presupuestos',
+      {
+        ...presupuesto,
+        cliente_id: props.clienteId,
+        orden_id: props.ordenId,
+      },
+      { timeout: 60000 },
+    )
 
-    // 2. Pedimos el HTML
     const response = await api.get(`/presupuestos/${data.id}/pdf`, {
       responseType: 'text',
-      timeout: 60000
+      timeout: 60000,
     })
 
     printWindow.document.write(response.data)
     printWindow.document.close()
-    printWindow.onload = function() { printWindow.print() }
+    printWindow.onload = function () {
+      printWindow.print()
+    }
     emit('cerrar')
   } catch (err) {
     printWindow.close()
@@ -711,6 +708,7 @@ const guardarPresupuesto = async () => {
   } finally {
     guardando.value = false
   }
+}
 </script>
 
 <style scoped>
