@@ -678,34 +678,39 @@ const guardarPresupuesto = async () => {
   // MODO CREACIÓN NORMAL
   // Abrimos la ventana inmediatamente para evitar el bloqueador de pop-ups
   const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    alert("Por favor, permite las ventanas emergentes para poder generar el PDF.")
+    guardando.value = false
+    return
+  }
 
   guardando.value = true
   calcularTotales()
   try {
+    // 1. Guardamos en la BD (con un timeout de 60s para esperar a que Render despierte)
     const { data } = await api.post('/presupuestos', {
       ...presupuesto,
       cliente_id: props.clienteId,
       orden_id: props.ordenId,
-    })
+    }, { timeout: 60000 })
 
+    // 2. Pedimos el HTML
     const response = await api.get(`/presupuestos/${data.id}/pdf`, {
       responseType: 'text',
+      timeout: 60000
     })
 
     printWindow.document.write(response.data)
     printWindow.document.close()
-    printWindow.onload = function () {
-      printWindow.print()
-    }
+    printWindow.onload = function() { printWindow.print() }
     emit('cerrar')
   } catch (err) {
-    printWindow.close() // Si falla, cerramos la ventanita vacía
-    alert('Error al guardar el presupuesto.')
+    printWindow.close()
+    alert('El servidor estaba despertando. Inténtalo de nuevo en 3 segundos.')
     console.error(err)
   } finally {
     guardando.value = false
   }
-}
 </script>
 
 <style scoped>
