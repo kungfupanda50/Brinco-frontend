@@ -179,23 +179,27 @@
           </button>
 
           <button
-            @click="filtroTipo = 'Ingreso'"
+            type="button"
+            @click="cambiarTipoMovimiento('Ingreso')"
             :class="
-              filtroTipo === 'Ingreso' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'
+              formulario.tipo_movimiento === 'Ingreso'
+                ? 'bg-emerald-500 text-white'
+                : 'text-slate-400'
             "
-            class="px-6 py-2 rounded-lg text-xs font-black uppercase"
+            class="flex-1 py-3 rounded-xl text-xs font-black uppercase"
           >
-            Ingresos
+            Ingreso (+)
           </button>
 
           <button
-            @click="filtroTipo = 'Egreso'"
+            type="button"
+            @click="cambiarTipoMovimiento('Egreso')"
             :class="
-              filtroTipo === 'Egreso' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400'
+              formulario.tipo_movimiento === 'Egreso' ? 'bg-amber-500 text-white' : 'text-slate-400'
             "
-            class="px-6 py-2 rounded-lg text-xs font-black uppercase"
+            class="flex-1 py-3 rounded-xl text-xs font-black uppercase"
           >
-            Egresos
+            Egreso (-)
           </button>
         </div>
 
@@ -783,6 +787,12 @@ const abrirModalRegistro = () => {
 
 const cerrarModal = () => {
   modalRegistro.value = false
+}
+
+const cambiarTipoMovimiento = (tipo) => {
+  formulario.value.tipo_movimiento = tipo
+
+  formulario.value.categoria_pago = tipo === 'Ingreso' ? 'Venta / Abono' : 'Gasto / Devolución'
 }
 
 const guardarMovimiento = async () => {
