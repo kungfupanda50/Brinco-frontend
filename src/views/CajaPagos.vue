@@ -3,7 +3,6 @@
     <!-- ========================================================= -->
     <!-- ENCABEZADO -->
     <!-- ========================================================= -->
-
     <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10">
       <div>
         <div class="flex items-center gap-2 mb-2">
