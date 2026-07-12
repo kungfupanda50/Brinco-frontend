@@ -182,6 +182,7 @@ const cargarDatos = async () => {
 // =========================================================
 
 const abrirCaja = async () => {
+  console.log('Entró a abrirCaja')
   try {
     procesandoCaja.value = true
 
