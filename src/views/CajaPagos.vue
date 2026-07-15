@@ -62,18 +62,19 @@ const ordenesActivas = ref([])
 const modalRegistro = ref(false)
 
 const formulario = ref({
-  orden_id: '',
+  // Asociación del movimiento
+  tipo_origen: 'ORDEN', // ORDEN | GENERAL
+  orden_id: null,
+  descripcion_general: '',
 
+  // Datos del movimiento
   monto: null,
-
   tipo_movimiento: 'Ingreso',
-
   categoria_pago: 'Venta / Abono',
 
+  // Pago
   metodo_pago_id: null,
-
   referencia_pago: '',
-
   nota_pago: '',
 })
 
@@ -95,6 +96,22 @@ const saldoDisponible = computed(() => {
     Number(stats.value.ingresos_hoy || 0) -
     Number(stats.value.egresos_hoy || 0)
   )
+})
+
+const ordenSeleccionada = computed(() => {
+  if (!formulario.value.orden_id) {
+    return null
+  }
+
+  return ordenesActivas.value.find((o) => o.id == formulario.value.orden_id) || null
+})
+
+const requiereOrden = computed(() => {
+  return formulario.value.tipo_origen === 'ORDEN'
+})
+
+const requiereDescripcionGeneral = computed(() => {
+  return formulario.value.tipo_origen === 'GENERAL'
 })
 
 const pagosFiltrados = computed(() => {
@@ -232,7 +249,11 @@ const cerrarCaja = async () => {
 
 const abrirModalRegistro = () => {
   formulario.value = {
-    orden_id: '',
+    tipo_origen: 'ORDEN',
+
+    orden_id: null,
+
+    descripcion_general: '',
 
     monto: null,
 
@@ -254,6 +275,14 @@ const cerrarModal = () => {
   modalRegistro.value = false
 }
 
+const cambioTipoOrigen = () => {
+  if (formulario.value.tipo_origen === 'GENERAL') {
+    formulario.value.orden_id = null
+  } else {
+    formulario.value.descripcion_general = ''
+  }
+}
+
 // =========================================================
 // GUARDAR MOVIMIENTO
 // =========================================================
@@ -266,7 +295,11 @@ const guardarMovimiento = async () => {
       return
     }
 
-    if (!formulario.value.monto || formulario.value.monto <= 0) {
+    // =====================================================
+    // VALIDACIONES
+    // =====================================================
+
+    if (!formulario.value.monto || Number(formulario.value.monto) <= 0) {
       alert('Ingrese un monto válido.')
 
       return
@@ -278,33 +311,63 @@ const guardarMovimiento = async () => {
       return
     }
 
-    const metodo = metodosPago.value.find((item) => item.id === formulario.value.metodo_pago_id)
-
-    if (metodo?.requiere_referencia && !formulario.value.referencia_pago.trim()) {
-      alert('Este método de pago requiere referencia.')
+    if (requiereOrden.value && !formulario.value.orden_id) {
+      alert('Debe seleccionar una orden de trabajo.')
 
       return
     }
 
+    if (requiereDescripcionGeneral.value && !formulario.value.descripcion_general.trim()) {
+      alert('Debe indicar el motivo del ingreso o egreso.')
+
+      return
+    }
+
+    const metodo = metodosPago.value.find((m) => m.id == formulario.value.metodo_pago_id)
+
+    if (metodo?.requiere_referencia && !formulario.value.referencia_pago.trim()) {
+      alert('Este método de pago requiere una referencia.')
+
+      return
+    }
+
+    // =====================================================
+    // PAYLOAD
+    // =====================================================
+
+    const payload = {
+      orden_id: requiereOrden.value ? formulario.value.orden_id : null,
+
+      tipo_origen: formulario.value.tipo_origen,
+
+      descripcion_general: requiereDescripcionGeneral.value
+        ? formulario.value.descripcion_general.trim()
+        : null,
+
+      monto: Number(formulario.value.monto),
+
+      tipo_movimiento: formulario.value.tipo_movimiento,
+
+      categoria_pago: formulario.value.categoria_pago,
+
+      metodo_pago_id: formulario.value.metodo_pago_id,
+
+      referencia_pago: formulario.value.referencia_pago.trim() || null,
+
+      nota_pago: formulario.value.nota_pago.trim() || null,
+    }
+
     guardando.value = true
 
-    await api.post(
-      '/pagos',
-
-      formulario.value,
-    )
-
-    modalRegistro.value = false
+    await api.post('/pagos', payload)
 
     await cargarDatos()
+
+    cerrarModal()
   } catch (err) {
-    console.error(
-      'Error guardando movimiento',
+    console.error(err)
 
-      err,
-    )
-
-    alert(err.response?.data?.error || 'No se pudo guardar movimiento.')
+    alert(err.response?.data?.error || 'Error al registrar el movimiento.')
   } finally {
     guardando.value = false
   }
@@ -406,6 +469,58 @@ onMounted(cargarDatos)
           >
             Nuevo Movimiento
           </button>
+        </div>
+
+        <!-- ORIGEN DEL MOVIMIENTO -->
+
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            @click="
+              formulario.tipo_origen = 'ORDEN'
+              cambioTipoOrigen()
+            "
+            class="py-3 rounded-xl font-bold"
+            :class="formulario.tipo_origen === 'ORDEN' ? 'bg-cyan-500 text-white' : 'bg-slate-100'"
+          >
+            Orden de trabajo
+          </button>
+
+          <button
+            type="button"
+            @click="
+              formulario.tipo_origen = 'GENERAL'
+              cambioTipoOrigen()
+            "
+            class="py-3 rounded-xl font-bold"
+            :class="
+              formulario.tipo_origen === 'GENERAL' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
+            "
+          >
+            Movimiento general
+          </button>
+        </div>
+        <div v-if="requiereOrden">
+          <label class="font-semibold text-slate-700"> Orden de trabajo </label>
+
+          <select v-model="formulario.orden_id" class="w-full px-4 py-3 rounded-xl border">
+            <option :value="null">Seleccione...</option>
+
+            <option v-for="orden in ordenesActivas" :key="orden.id" :value="orden.id">
+              #{{ orden.id }}
+              -
+              {{ orden.cliente_nombre }}
+            </option>
+          </select>
+        </div>
+        <div v-if="requiereDescripcionGeneral">
+          <label class="font-semibold text-slate-700"> Descripción </label>
+
+          <input
+            v-model="formulario.descripcion_general"
+            class="w-full px-4 py-3 rounded-xl border"
+            placeholder="Ejemplo: Compra de café, pago de luz, retiro bancario..."
+          />
         </div>
       </header>
 
@@ -606,59 +721,85 @@ onMounted(cargarDatos)
           </div>
 
           <form @submit.prevent="guardarMovimiento" class="space-y-5">
-            <div class="flex gap-3">
-              <button
-                type="button"
-                @click="cambiarTipoMovimiento('Ingreso')"
-                class="flex-1 py-3 rounded-xl font-black"
-                :class="
-                  formulario.tipo_movimiento === 'Ingreso'
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-100'
-                "
-              >
-                Ingreso (+)
-              </button>
+            <!-- ============================================= -->
+            <!-- ORIGEN DEL MOVIMIENTO -->
+            <!-- ============================================= -->
 
-              <button
-                type="button"
-                @click="cambiarTipoMovimiento('Egreso')"
-                class="flex-1 py-3 rounded-xl font-black"
-                :class="
-                  formulario.tipo_movimiento === 'Egreso'
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-slate-100'
-                "
+            <div class="space-y-2">
+              <label class="font-semibold text-sm text-gray-700"> Origen del movimiento </label>
+
+              <select
+                v-model="formulario.tipo_origen"
+                @change="cambioTipoOrigen"
+                class="w-full rounded-xl border px-3 py-2"
               >
-                Egreso (-)
-              </button>
+                <option value="ORDEN">Orden de trabajo</option>
+
+                <option value="GENERAL">Movimiento general</option>
+              </select>
             </div>
 
-            <input
-              v-model.number="formulario.monto"
-              type="number"
-              step="0.01"
-              placeholder="Monto"
-              class="w-full px-4 py-3 rounded-xl border"
-            />
+            <!-- ============================================= -->
+            <!-- ORDEN -->
+            <!-- ============================================= -->
 
-            <select v-model="formulario.metodo_pago_id" class="w-full px-4 py-3 rounded-xl border">
-              <option v-for="metodo in metodosPago" :key="metodo.id" :value="metodo.id">
-                {{ metodo.nombre }}
-              </option>
-            </select>
+            <div v-if="requiereOrden" class="space-y-2">
+              <label class="font-semibold text-sm text-gray-700"> Orden de trabajo </label>
 
-            <input
-              v-model="formulario.referencia_pago"
-              placeholder="Referencia"
-              class="w-full px-4 py-3 rounded-xl border"
-            />
+              <select v-model="formulario.orden_id" class="w-full rounded-xl border px-3 py-2">
+                <option :value="null">Seleccione...</option>
 
-            <textarea
-              v-model="formulario.nota_pago"
-              placeholder="Nota"
-              class="w-full px-4 py-3 rounded-xl border"
-            ></textarea>
+                <option v-for="orden in ordenesActivas" :key="orden.id" :value="orden.id">
+                  #{{ orden.id }}
+                  -
+                  {{ orden.cliente_nombre }}
+                </option>
+              </select>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- INFORMACIÓN DE LA ORDEN -->
+            <!-- ============================================= -->
+
+            <div
+              v-if="ordenSeleccionada"
+              class="rounded-xl bg-cyan-50 border border-cyan-200 p-4 text-sm"
+            >
+              <div>
+                <strong>Cliente:</strong>
+
+                {{ ordenSeleccionada.cliente_nombre }}
+              </div>
+
+              <div class="mt-1">
+                <strong>Estado:</strong>
+
+                {{ ordenSeleccionada.estado }}
+              </div>
+
+              <div class="mt-1">
+                <strong>Total Orden:</strong>
+
+                Q {{ Number(ordenSeleccionada.total_quetzales).toFixed(2) }}
+              </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- DESCRIPCIÓN GENERAL -->
+            <!-- ============================================= -->
+
+            <div v-if="requiereDescripcionGeneral" class="space-y-2">
+              <label class="font-semibold text-sm text-gray-700">
+                Descripción del movimiento
+              </label>
+
+              <input
+                v-model="formulario.descripcion_general"
+                type="text"
+                class="w-full rounded-xl border px-3 py-2"
+                placeholder="Ejemplo: Pago de energía, alquiler, anticipo, préstamo, etc."
+              />
+            </div>
 
             <button
               type="submit"
