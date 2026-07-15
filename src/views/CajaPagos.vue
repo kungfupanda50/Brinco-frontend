@@ -35,6 +35,16 @@ const cierreForm = ref({
   observaciones: '',
 })
 
+const seleccionarOrigenOrden = () => {
+  formulario.value.tipo_origen = 'ORDEN'
+  cambioTipoOrigen()
+}
+
+const seleccionarOrigenGeneral = () => {
+  formulario.value.tipo_origen = 'GENERAL'
+  cambioTipoOrigen()
+}
+
 // =========================================================
 // MOVIMIENTOS
 // =========================================================
@@ -707,10 +717,7 @@ onMounted(cargarDatos)
               <div class="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  @click="
-                    formulario.tipo_origen = 'ORDEN'
-                    cambioTipoOrigen()
-                  "
+                  @click="seleccionarOrigenOrden"
                   class="py-3 rounded-xl font-bold"
                   :class="
                     formulario.tipo_origen === 'ORDEN' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
@@ -721,10 +728,7 @@ onMounted(cargarDatos)
 
                 <button
                   type="button"
-                  @click="
-                    formulario.tipo_origen = 'GENERAL'
-                    cambioTipoOrigen()
-                  "
+                  @click="seleccionarOrigenGeneral"
                   class="py-3 rounded-xl font-bold"
                   :class="
                     formulario.tipo_origen === 'GENERAL' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
