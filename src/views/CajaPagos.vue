@@ -721,33 +721,79 @@ onMounted(cargarDatos)
           </div>
 
           <form @submit.prevent="guardarMovimiento" class="space-y-5">
-            <!-- ============================================= -->
-            <!-- ORIGEN DEL MOVIMIENTO -->
-            <!-- ============================================= -->
+            <!-- Tipo de movimiento -->
 
-            <div class="space-y-2">
-              <label class="font-semibold text-sm text-gray-700"> Origen del movimiento </label>
-
-              <select
-                v-model="formulario.tipo_origen"
-                @change="cambioTipoOrigen"
-                class="w-full rounded-xl border px-3 py-2"
+            <div class="flex gap-3">
+              <button
+                type="button"
+                @click="cambiarTipoMovimiento('Ingreso')"
+                class="flex-1 py-3 rounded-xl font-black"
+                :class="
+                  formulario.tipo_movimiento === 'Ingreso'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-slate-100'
+                "
               >
-                <option value="ORDEN">Orden de trabajo</option>
+                Ingreso (+)
+              </button>
 
-                <option value="GENERAL">Movimiento general</option>
-              </select>
+              <button
+                type="button"
+                @click="cambiarTipoMovimiento('Egreso')"
+                class="flex-1 py-3 rounded-xl font-black"
+                :class="
+                  formulario.tipo_movimiento === 'Egreso'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-slate-100'
+                "
+              >
+                Egreso (-)
+              </button>
             </div>
 
-            <!-- ============================================= -->
-            <!-- ORDEN -->
-            <!-- ============================================= -->
+            <!-- Origen del movimiento -->
 
-            <div v-if="requiereOrden" class="space-y-2">
-              <label class="font-semibold text-sm text-gray-700"> Orden de trabajo </label>
+            <div>
+              <label class="block mb-2 font-bold text-slate-700"> Origen del movimiento </label>
 
-              <select v-model="formulario.orden_id" class="w-full rounded-xl border px-3 py-2">
-                <option :value="null">Seleccione...</option>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  @click="
+                    formulario.tipo_origen = 'ORDEN'
+                    cambioTipoOrigen()
+                  "
+                  class="py-3 rounded-xl font-bold"
+                  :class="
+                    formulario.tipo_origen === 'ORDEN' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
+                  "
+                >
+                  Orden de trabajo
+                </button>
+
+                <button
+                  type="button"
+                  @click="
+                    formulario.tipo_origen = 'GENERAL'
+                    cambioTipoOrigen()
+                  "
+                  class="py-3 rounded-xl font-bold"
+                  :class="
+                    formulario.tipo_origen === 'GENERAL' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
+                  "
+                >
+                  Movimiento general
+                </button>
+              </div>
+            </div>
+
+            <!-- Orden -->
+
+            <div v-if="requiereOrden">
+              <label class="block mb-2 font-bold text-slate-700"> Orden de trabajo </label>
+
+              <select v-model="formulario.orden_id" class="w-full px-4 py-3 rounded-xl border">
+                <option :value="null">Seleccione una orden</option>
 
                 <option v-for="orden in ordenesActivas" :key="orden.id" :value="orden.id">
                   #{{ orden.id }}
@@ -755,51 +801,75 @@ onMounted(cargarDatos)
                   {{ orden.cliente_nombre }}
                 </option>
               </select>
-            </div>
 
-            <!-- ============================================= -->
-            <!-- INFORMACIÓN DE LA ORDEN -->
-            <!-- ============================================= -->
+              <div v-if="ordenSeleccionada" class="mt-3 rounded-xl bg-cyan-50 p-3 text-sm">
+                <div>
+                  <strong>Cliente:</strong>
 
-            <div
-              v-if="ordenSeleccionada"
-              class="rounded-xl bg-cyan-50 border border-cyan-200 p-4 text-sm"
-            >
-              <div>
-                <strong>Cliente:</strong>
+                  {{ ordenSeleccionada.cliente_nombre }}
+                </div>
 
-                {{ ordenSeleccionada.cliente_nombre }}
-              </div>
+                <div>
+                  <strong>Total:</strong>
 
-              <div class="mt-1">
-                <strong>Estado:</strong>
+                  Q {{ Number(ordenSeleccionada.total_quetzales).toFixed(2) }}
+                </div>
 
-                {{ ordenSeleccionada.estado }}
-              </div>
+                <div>
+                  <strong>Estado:</strong>
 
-              <div class="mt-1">
-                <strong>Total Orden:</strong>
-
-                Q {{ Number(ordenSeleccionada.total_quetzales).toFixed(2) }}
+                  {{ ordenSeleccionada.estado }}
+                </div>
               </div>
             </div>
 
-            <!-- ============================================= -->
-            <!-- DESCRIPCIÓN GENERAL -->
-            <!-- ============================================= -->
+            <!-- Movimiento General -->
 
-            <div v-if="requiereDescripcionGeneral" class="space-y-2">
-              <label class="font-semibold text-sm text-gray-700">
-                Descripción del movimiento
-              </label>
+            <div v-if="requiereDescripcionGeneral">
+              <label class="block mb-2 font-bold text-slate-700"> Descripción </label>
 
               <input
                 v-model="formulario.descripcion_general"
-                type="text"
-                class="w-full rounded-xl border px-3 py-2"
-                placeholder="Ejemplo: Pago de energía, alquiler, anticipo, préstamo, etc."
+                class="w-full px-4 py-3 rounded-xl border"
+                placeholder="Ejemplo: Pago de energía eléctrica, compra de café, ingreso por alquiler, etc."
               />
             </div>
+
+            <!-- Monto -->
+
+            <input
+              v-model.number="formulario.monto"
+              type="number"
+              step="0.01"
+              placeholder="Monto"
+              class="w-full px-4 py-3 rounded-xl border"
+            />
+
+            <!-- Método -->
+
+            <select v-model="formulario.metodo_pago_id" class="w-full px-4 py-3 rounded-xl border">
+              <option v-for="metodo in metodosPago" :key="metodo.id" :value="metodo.id">
+                {{ metodo.nombre }}
+              </option>
+            </select>
+
+            <!-- Referencia -->
+
+            <input
+              v-model="formulario.referencia_pago"
+              placeholder="Referencia"
+              class="w-full px-4 py-3 rounded-xl border"
+            />
+
+            <!-- Nota -->
+
+            <textarea
+              v-model="formulario.nota_pago"
+              placeholder="Nota"
+              class="w-full px-4 py-3 rounded-xl border"
+            ></textarea>
+
+            <!-- Guardar -->
 
             <button
               type="submit"
