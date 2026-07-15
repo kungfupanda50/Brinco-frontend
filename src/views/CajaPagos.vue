@@ -470,58 +470,6 @@ onMounted(cargarDatos)
             Nuevo Movimiento
           </button>
         </div>
-
-        <!-- ORIGEN DEL MOVIMIENTO -->
-
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            @click="
-              formulario.tipo_origen = 'ORDEN'
-              cambioTipoOrigen()
-            "
-            class="py-3 rounded-xl font-bold"
-            :class="formulario.tipo_origen === 'ORDEN' ? 'bg-cyan-500 text-white' : 'bg-slate-100'"
-          >
-            Orden de trabajo
-          </button>
-
-          <button
-            type="button"
-            @click="
-              formulario.tipo_origen = 'GENERAL'
-              cambioTipoOrigen()
-            "
-            class="py-3 rounded-xl font-bold"
-            :class="
-              formulario.tipo_origen === 'GENERAL' ? 'bg-cyan-500 text-white' : 'bg-slate-100'
-            "
-          >
-            Movimiento general
-          </button>
-        </div>
-        <div v-if="requiereOrden">
-          <label class="font-semibold text-slate-700"> Orden de trabajo </label>
-
-          <select v-model="formulario.orden_id" class="w-full px-4 py-3 rounded-xl border">
-            <option :value="null">Seleccione...</option>
-
-            <option v-for="orden in ordenesActivas" :key="orden.id" :value="orden.id">
-              #{{ orden.id }}
-              -
-              {{ orden.cliente_nombre }}
-            </option>
-          </select>
-        </div>
-        <div v-if="requiereDescripcionGeneral">
-          <label class="font-semibold text-slate-700"> Descripción </label>
-
-          <input
-            v-model="formulario.descripcion_general"
-            class="w-full px-4 py-3 rounded-xl border"
-            placeholder="Ejemplo: Compra de café, pago de luz, retiro bancario..."
-          />
-        </div>
       </header>
 
       <!-- =====================================================
