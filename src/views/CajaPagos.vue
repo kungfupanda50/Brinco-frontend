@@ -124,26 +124,47 @@ const cargarDatos = async () => {
   try {
     cargando.value = true
     error.value = null
-    const [resCaja, resResumen, resPagos, resOrdenes, resMetodos] = await Promise.all([
-      api.get('/caja/abierta'),
-      api.get('/caja/resumen'),
-      api.get('/pagos'),
-      api.get('/ordenes'),
-      api.get('/catalogos/metodos-pago'),
-    ])
 
-    cajaActual.value = resCaja.data
-    stats.value = resResumen.data
-    transacciones.value = Array.isArray(resPagos.data) ? resPagos.data : []
-    ordenesActivas.value = resOrdenes.data.filter((orden) => orden.estado !== 'Cancelado')
-    metodosPago.value = Array.isArray(resMetodos.data) ? resMetodos.data : []
+    // Usamos try/catch individuales para que si un catálogo falla, la pantalla no se rompa
+    try {
+      const resCaja = await api.get('/caja/abierta')
+      cajaActual.value = resCaja.data
+    } catch (e) {
+      console.error('Error caja abierta', e)
+    }
 
-    if (metodosPago.value.length && !formulario.value.metodo_pago_id) {
-      formulario.value.metodo_pago_id = metodosPago.value[0].id
+    try {
+      const resResumen = await api.get('/caja/resumen')
+      stats.value = resResumen.data
+    } catch (e) {
+      console.error('Error resumen', e)
+    }
+
+    try {
+      const resPagos = await api.get('/pagos')
+      transacciones.value = Array.isArray(resPagos.data) ? resPagos.data : []
+    } catch (e) {
+      console.error('Error pagos', e)
+    }
+
+    try {
+      const resOrdenes = await api.get('/ordenes')
+      ordenesActivas.value = resOrdenes.data.filter((orden) => orden.estado !== 'Cancelado')
+    } catch (e) {
+      console.error('Error ordenes', e)
+    }
+
+    try {
+      const resMetodos = await api.get('/catalogos/metodos-pago')
+      metodosPago.value = Array.isArray(resMetodos.data) ? resMetodos.data : []
+      if (metodosPago.value.length && !formulario.value.metodo_pago_id) {
+        formulario.value.metodo_pago_id = metodosPago.value[0].id
+      }
+    } catch (e) {
+      console.error('Error metodos', e)
     }
   } catch (err) {
-    console.error('Error cargando caja', err)
-    error.value = 'No se pudo cargar información de caja.'
+    console.error('Error general', err)
   } finally {
     cargando.value = false
   }
@@ -694,7 +715,8 @@ onMounted(cargarDatos)
         ></div>
         <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
           <h2 class="text-2xl font-black text-slate-900 mb-6">Apertura de Caja</h2>
-          <div class="space-y-5">
+
+          <form @submit.prevent="abrirCaja" class="space-y-5">
             <div>
               <label
                 class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2"
@@ -705,25 +727,29 @@ onMounted(cargarDatos)
                 type="number"
                 min="0"
                 step="0.01"
+                autofocus
                 class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-black text-slate-700 text-lg"
+                placeholder="0.00"
               />
             </div>
-          </div>
-          <div class="flex justify-end gap-3 mt-8">
-            <button
-              @click="modalApertura = false"
-              class="px-6 py-3 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase hover:bg-slate-200 transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              @click="abrirCaja"
-              :disabled="procesandoCaja"
-              class="px-8 py-3 rounded-2xl bg-emerald-500 text-white font-black text-xs uppercase shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all disabled:opacity-50"
-            >
-              {{ procesandoCaja ? 'Abriendo...' : 'Abrir Caja' }}
-            </button>
-          </div>
+
+            <div class="flex justify-end gap-3 mt-8">
+              <button
+                type="button"
+                @click="modalApertura = false"
+                class="px-6 py-3 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase hover:bg-slate-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                :disabled="procesandoCaja"
+                class="px-8 py-3 rounded-2xl bg-emerald-500 text-white font-black text-xs uppercase shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all disabled:opacity-50"
+              >
+                {{ procesandoCaja ? 'Abriendo...' : 'Abrir Caja' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
