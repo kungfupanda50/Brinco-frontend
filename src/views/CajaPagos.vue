@@ -311,6 +311,66 @@ const obtenerNombreMetodo = (pago) => {
   return metodo ? metodo.nombre : 'Sin especificar'
 }
 
+import * as XLSX from 'xlsx'
+
+// =========================================================
+// REPORTE DE CAJA
+// =========================================================
+const modalReporte = ref(false)
+const reporteData = ref([])
+const listaUsuarios = ref([])
+const reporteForm = ref({
+  fechaInicio: '',
+  fechaFin: '',
+  usuarioId: '',
+  cajaId: '',
+  ordenId: '',
+})
+
+const abrirModalReporte = async () => {
+  modalReporte.value = true
+  try {
+    const res = await api.get('/usuarios')
+    listaUsuarios.value = res.data
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const generarReporte = async () => {
+  try {
+    const res = await api.get('/caja/reporte', { params: reporteForm.value })
+    reporteData.value = res.data
+  } catch (err) {
+    alert('Error al generar el reporte.')
+    console.error(err)
+  }
+}
+
+const exportarExcel = () => {
+  if (reporteData.value.length === 0) return alert('No hay datos para exportar.')
+
+  // Mapeamos los datos para que el Excel tenga títulos limpios
+  const dataExcel = reporteData.value.map((p) => ({
+    Fecha: new Date(p.fecha_pago).toLocaleString('es-GT'),
+    'Caja ID': p.caja_id || 'N/A',
+    Usuario: p.usuario_nombre || 'N/A',
+    Tipo: p.tipo_movimiento,
+    Categoría: p.categoria_pago,
+    Método: p.metodo_pago || 'N/A',
+    'Orden ID': p.orden_id || 'N/A',
+    'Cliente / Descripción': p.cliente_nombre || p.descripcion_origen || 'N/A',
+    Referencia: p.referencia_pago || '',
+    Nota: p.nota_pago || '',
+    'Monto (Q)': Number(p.monto),
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(dataExcel)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporte Caja')
+  XLSX.writeFile(wb, `Reporte_Caja_${new Date().toISOString().split('T')[0]}.xlsx`)
+}
+
 onMounted(cargarDatos)
 </script>
 
@@ -357,6 +417,13 @@ onMounted(cargarDatos)
             class="px-6 py-3 rounded-2xl bg-[#06b6d4] text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-cyan-500/20 hover:scale-105 transition-all disabled:opacity-40 disabled:scale-100"
           >
             Nuevo Movimiento
+          </button>
+          <!-- BOTÓN DE REPORTES -->
+          <button
+            @click="abrirModalReporte"
+            class="px-6 py-3 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+          >
+            <span class="material-icons text-sm">analytics</span> Reportes
           </button>
         </div>
       </header>
@@ -809,6 +876,165 @@ onMounted(cargarDatos)
             >
               {{ procesandoCaja ? 'Cerrando...' : 'Confirmar Cierre' }}
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REPORTE DE CAJA -->
+    <div v-if="modalReporte" class="fixed inset-0 z-[500] flex items-center justify-center p-4">
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="modalReporte = false"
+      ></div>
+      <div
+        class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl p-8 max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-2xl font-black text-slate-900">Reporte de Movimientos</h2>
+            <p class="text-sm text-slate-500">Filtra y exporta los movimientos de caja.</p>
+          </div>
+          <button
+            @click="modalReporte = false"
+            class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 flex items-center justify-center"
+          >
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 bg-slate-50 p-4 rounded-2xl">
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >Desde</label
+            >
+            <input
+              v-model="reporteForm.fechaInicio"
+              type="date"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >Hasta</label
+            >
+            <input
+              v-model="reporteForm.fechaFin"
+              type="date"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >Usuario</label
+            >
+            <select
+              v-model="reporteForm.usuarioId"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+            >
+              <option value="">Todos</option>
+              <option v-for="u in listaUsuarios" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+            </select>
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >No. Caja</label
+            >
+            <input
+              v-model="reporteForm.cajaId"
+              type="number"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+              placeholder="Ej: 3"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >No. Orden</label
+            >
+            <input
+              v-model="reporteForm.ordenId"
+              type="number"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+              placeholder="Ej: 18"
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mb-6">
+          <button
+            @click="generarReporte"
+            class="px-6 py-2.5 rounded-xl bg-[#06b6d4] text-white font-black text-xs uppercase hover:scale-105 transition-all"
+          >
+            Generar Reporte
+          </button>
+          <button
+            @click="exportarExcel"
+            :disabled="reporteData.length === 0"
+            class="px-6 py-2.5 rounded-xl bg-emerald-500 text-white font-black text-xs uppercase hover:scale-105 transition-all disabled:opacity-50 flex items-center gap-1"
+          >
+            <span class="material-icons text-sm">download</span> Excel
+          </button>
+        </div>
+
+        <!-- Tabla Resultados -->
+        <div
+          class="overflow-x-auto max-h-[40vh] overflow-y-auto border border-slate-100 rounded-2xl"
+        >
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 sticky top-0">
+              <tr>
+                <th class="p-3 text-[10px] font-black uppercase text-slate-400">Fecha</th>
+                <th class="p-3 text-[10px] font-black uppercase text-slate-400">Usuario</th>
+                <th class="p-3 text-[10px] font-black uppercase text-slate-400">Tipo</th>
+                <th class="p-3 text-[10px] font-black uppercase text-slate-400">Cliente/Desc</th>
+                <th class="p-3 text-[10px] font-black uppercase text-slate-400 text-right">
+                  Monto
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              <tr v-for="row in reporteData" :key="row.id" class="hover:bg-slate-50">
+                <td class="p-3 text-xs text-slate-600">
+                  {{ new Date(row.fecha_pago).toLocaleString('es-GT') }}
+                </td>
+                <td class="p-3 text-xs font-bold text-slate-700">
+                  {{ row.usuario_nombre || 'N/A' }}
+                </td>
+                <td class="p-3">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                    :class="
+                      row.tipo_movimiento === 'Ingreso'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                    "
+                  >
+                    {{ row.tipo_movimiento }}
+                  </span>
+                </td>
+                <td class="p-3 text-xs text-slate-600">
+                  {{ row.cliente_nombre || row.descripcion_origen || 'N/A' }}
+                </td>
+                <td
+                  class="p-3 text-right font-black"
+                  :class="row.tipo_movimiento === 'Ingreso' ? 'text-emerald-500' : 'text-amber-500'"
+                >
+                  Q {{ Number(row.monto).toFixed(2) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div
+            v-if="reporteData.length === 0"
+            class="p-10 text-center text-slate-400 text-xs font-bold uppercase"
+          >
+            Presione "Generar Reporte" para buscar movimientos.
           </div>
         </div>
       </div>
