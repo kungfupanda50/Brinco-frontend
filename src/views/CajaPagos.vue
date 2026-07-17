@@ -350,7 +350,7 @@ const generarReporte = async () => {
 const exportarExcel = () => {
   if (reporteData.value.length === 0) return alert('No hay datos para exportar.')
 
-  // Mapeamos los datos para que el Excel tenga títulos limpios
+  // Mapeamos los datos para que el Excel tenga los montos separados
   const dataExcel = reporteData.value.map((p) => ({
     Fecha: new Date(p.fecha_pago).toLocaleString('es-GT'),
     'Caja ID': p.caja_id || 'N/A',
@@ -362,7 +362,9 @@ const exportarExcel = () => {
     'Cliente / Descripción': p.cliente_nombre || p.descripcion_origen || 'N/A',
     Referencia: p.referencia_pago || '',
     Nota: p.nota_pago || '',
-    'Monto (Q)': Number(p.monto),
+    // Separamos los montos en dos columnas
+    'Cargo (Ingreso)': p.tipo_movimiento === 'Ingreso' ? Number(p.monto) : 0,
+    'Abono (Egreso)': p.tipo_movimiento === 'Egreso' ? Number(p.monto) : 0,
   }))
 
   const ws = XLSX.utils.json_to_sheet(dataExcel)
