@@ -398,7 +398,6 @@ import { ref, computed, onMounted } from 'vue'
 import api from '../api/axios'
 
 // --- CONFIGURACIÓN ---
-// Ya no necesitamos apiBase porque Cloudinary nos dará una URL completa (https://...)
 const mapaPermisos = {
   p_dashboard: 'Panel de Control',
   p_clientes: 'Módulo Clientes',
@@ -407,7 +406,11 @@ const mapaPermisos = {
   p_inventario: 'Almacén de Insumos',
   p_proveedores: 'Proveedores',
   p_entrada_mercancia: 'Carga de Stock',
-  p_caja: 'Caja y Pagos',
+  p_caja: 'Ver Caja y Pagos',
+  p_operar_caja: 'Operar Movimientos',
+  p_apertura_caja: 'Abrir Caja',
+  p_cierre_caja: 'Cerrar Caja',
+  p_historial_caja: 'Ver Histórico',
   p_cat_clientes: 'Categorías Clientes',
   p_cat_productos: 'Categorías Productos',
   p_usuarios: 'Gestión Usuarios',
