@@ -46,7 +46,7 @@ const stats = ref({ ingresos_hoy: 0, egresos_hoy: 0, fondo_inicial: 0 })
 // CATALOGOS
 // =========================================================
 const metodosPago = ref([])
-const ordenesActivas = ref([])
+const cotizacionesActivas = ref([])
 
 // =========================================================
 // FORMULARIO MOVIMIENTO
@@ -55,7 +55,7 @@ const modalRegistro = ref(false)
 
 const formulario = ref({
   tipo_origen: 'ORDEN',
-  orden_id: null,
+  presupuesto_id: null,
   descripcion_general: '',
   monto: null,
   tipo_movimiento: 'Ingreso',
@@ -82,9 +82,9 @@ const saldoDisponible = computed(() => {
   )
 })
 
-const ordenSeleccionada = computed(() => {
-  if (!formulario.value.orden_id) return null
-  return ordenesActivas.value.find((o) => o.id == formulario.value.orden_id) || null
+const cotizacionSeleccionada = computed(() => {
+  if (!formulario.value.presupuesto_id) return null
+  return cotizacionesActivas.value.find((c) => c.id == formulario.value.presupuesto_id) || null
 })
 
 const requiereOrden = computed(() => formulario.value.tipo_origen === 'ORDEN')
@@ -148,10 +148,12 @@ const cargarDatos = async () => {
     }
 
     try {
-      const resOrdenes = await api.get('/ordenes')
-      ordenesActivas.value = resOrdenes.data.filter((orden) => orden.estado !== 'Cancelado')
+      const resCotizaciones = await api.get('/presupuestos')
+      cotizacionesActivas.value = resCotizaciones.data.filter(
+        (c) => c.estado === 'Borrador' || c.estado === 'Aceptada',
+      )
     } catch (e) {
-      console.error('Error ordenes', e)
+      console.error('Error cotizaciones', e)
     }
 
     try {
@@ -205,7 +207,7 @@ const cerrarCaja = async () => {
 const abrirModalRegistro = () => {
   formulario.value = {
     tipo_origen: 'ORDEN',
-    orden_id: null,
+    presupuesto_id: null,
     descripcion_general: '',
     monto: null,
     tipo_movimiento: 'Ingreso',
@@ -246,8 +248,8 @@ const guardarMovimiento = async () => {
       alert('Seleccione un método de pago.')
       return
     }
-    if (requiereOrden.value && !formulario.value.orden_id) {
-      alert('Debe seleccionar una orden de trabajo.')
+    if (requiereOrden.value && !formulario.value.presupuesto_id) {
+      alert('Debe seleccionar una cotización.')
       return
     }
     if (requiereDescripcionGeneral.value && !formulario.value.descripcion_general.trim()) {
@@ -263,11 +265,11 @@ const guardarMovimiento = async () => {
 
     // PAYLOAD AJUSTADO A LOS NOMBRES DEL BACKEND
     const payload = {
-      orden_id: requiereOrden.value ? formulario.value.orden_id : null,
-      origen_pago: formulario.value.tipo_origen, // <-- Ajustado
+      presupuesto_id: requiereOrden.value ? formulario.value.presupuesto_id : null,
+      origen_pago: formulario.value.tipo_origen,
       descripcion_origen: requiereDescripcionGeneral.value
         ? formulario.value.descripcion_general.trim()
-        : null, // <-- Ajustado
+        : null,
       monto: Number(formulario.value.monto),
       tipo_movimiento: formulario.value.tipo_movimiento,
       categoria_pago: formulario.value.categoria_pago,
@@ -676,26 +678,35 @@ onMounted(cargarDatos)
             <div v-if="requiereOrden">
               <label
                 class="block mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
-                >Orden de trabajo</label
+                >Cotización / Proyecto</label
               >
               <select
-                v-model="formulario.orden_id"
+                v-model="formulario.presupuesto_id"
                 class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-bold text-slate-700"
               >
-                <option :value="null">Seleccione una orden</option>
-                <option v-for="orden in ordenesActivas" :key="orden.id" :value="orden.id">
-                  #{{ orden.id }} - {{ orden.cliente_nombre }}
+                <option :value="null">Seleccione una cotización</option>
+                <option v-for="c in cotizacionesActivas" :key="c.id" :value="c.id">
+                  #{{ c.numero_cotizacion }} - {{ c.cliente_nombre }}
                 </option>
               </select>
               <div
-                v-if="ordenSeleccionada"
+                v-if="cotizacionSeleccionada"
                 class="mt-3 rounded-2xl bg-cyan-50 p-4 text-sm border border-cyan-100"
               >
                 <div class="font-bold text-slate-700">
-                  Cliente: {{ ordenSeleccionada.cliente_nombre }}
+                  Cliente: {{ cotizacionSeleccionada.cliente_nombre }}
                 </div>
                 <div class="text-slate-500">
-                  Total: Q {{ Number(ordenSeleccionada.total_quetzales).toFixed(2) }}
+                  Total: Q {{ Number(cotizacionSeleccionada.total).toFixed(2) }}
+                </div>
+                <div class="text-slate-500">
+                  Saldo: Q
+                  {{
+                    (
+                      Number(cotizacionSeleccionada.total) -
+                      Number(cotizacionSeleccionada.total_pagado || 0)
+                    ).toFixed(2)
+                  }}
                 </div>
               </div>
             </div>

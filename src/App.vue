@@ -43,7 +43,7 @@ watch(
 const allMenuItems = [
   { name: 'Dashboard', path: '/', icon: 'dashboard', permiso: 'p_dashboard' },
   { name: 'Clientes', path: '/clientes', icon: 'people', permiso: 'p_clientes' },
-  { name: 'Cotizaciones', path: '/cotizaciones', icon: 'request_quote' },
+  { name: 'Cotizaciones', path: '/cotizaciones', icon: 'request_quote', permiso: 'p_nueva_orden' },
   { name: 'Órdenes', path: '/ordenes', icon: 'assignment', permiso: 'p_ordenes' },
   { name: 'Nueva Orden', path: '/nueva-orden', icon: 'add_box', permiso: 'p_nueva_orden' },
   { name: 'Inventario', path: '/inventario', icon: 'inventory_2', permiso: 'p_inventario' },
