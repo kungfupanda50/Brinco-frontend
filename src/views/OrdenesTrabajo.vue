@@ -426,19 +426,6 @@ const CardOrden = defineComponent({
                   )
                 : null,
 
-              // BOTÓN GENERAR PRESUPUESTO
-              props.column === 'Pendiente'
-                ? h(
-                    'button',
-                    {
-                      onClick: () => emit('abrir-presupuesto', props.orden),
-                      class: 'p-2 text-slate-400 hover:text-[#06b6d4] rounded-xl',
-                      title: 'Generar Cotización',
-                    },
-                    [h('span', { class: 'material-icons' }, 'description')],
-                  )
-                : null,
-
               props.column !== 'Finalizadas' && props.column !== 'Rechazado'
                 ? h(
                     'button',

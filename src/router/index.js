@@ -92,6 +92,12 @@ const routes = [
     component: () => import('../views/Usuarios.vue'),
     meta: { title: 'Usuarios y Permisos', permiso: 'p_usuarios' },
   },
+  {
+    path: '/cotizaciones',
+    name: 'Cotizaciones',
+    component: () => import('../views/Cotizaciones.vue'),
+    meta: { requiresAuth: true },
+  },
 ]
 
 const router = createRouter({
