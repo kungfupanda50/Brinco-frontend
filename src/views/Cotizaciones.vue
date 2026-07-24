@@ -99,7 +99,7 @@
                 </button>
 
                 <button
-                  v-if="c.estado === 'Borrador'"
+                  v-if="c.estado.toLowerCase() === 'borrador'"
                   @click="cambiarEstado(c.id, 'Aceptada')"
                   class="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
                   title="Aceptar Cotización"
@@ -108,7 +108,7 @@
                 </button>
 
                 <button
-                  v-if="c.estado === 'Aceptada'"
+                  v-if="c.estado.toLowerCase() === 'aceptada'"
                   @click="generarOrden(c.id)"
                   class="px-3 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-1"
                   title="Generar Orden de Trabajo"
@@ -130,12 +130,51 @@
       </table>
     </div>
 
-    <!-- MODAL PARA NUEVA COTIZACIÓN (Redirige a la vista de orden o abre el componente Presupuesto) -->
-    <!-- Por ahora, si tienes un componente Presupuesto.vue, puedes integrarlo aquí -->
+    <!-- MODAL PARA NUEVA COTIZACIÓN -->
+    <!-- MODAL SELECCIÓN DE CLIENTE PARA NUEVA COTIZACIÓN -->
+    <div
+      v-if="mostrarModalPresupuesto && !clienteSeleccionadoId"
+      class="fixed inset-0 z-[600] flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="mostrarModalPresupuesto = false"
+      ></div>
+      <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
+        <h2 class="text-2xl font-black text-slate-900 mb-6">Nueva Cotización</h2>
+        <p class="text-sm text-slate-500 mb-4">Selecciona el cliente para generar la cotización:</p>
+
+        <select
+          v-model="clienteSeleccionadoId"
+          class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-bold text-slate-700 mb-6"
+        >
+          <option :value="null" disabled>Seleccione un cliente...</option>
+          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nombre_completo }}</option>
+        </select>
+
+        <div class="flex justify-end gap-3">
+          <button
+            @click="mostrarModalPresupuesto = false"
+            class="px-6 py-3 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase hover:bg-slate-200 transition-all"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REAL DE PRESUPUESTO -->
+    <Presupuesto
+      v-if="mostrarModalPresupuesto && clienteSeleccionadoId"
+      :cliente-id="clienteSeleccionadoId"
+      :orden-id="null"
+      @cerrar="cerrarModalPresupuesto"
+    />
   </div>
 </template>
 
 <script setup>
+import Presupuesto from './Presupuesto.vue'
 import { ref, onMounted } from 'vue'
 import api from '../api/axios'
 
@@ -205,9 +244,28 @@ const generarOrden = (id) => {
   window.location.href = `/nueva-orden?presupuesto_id=${id}`
 }
 
-const abrirModalCrear = () => {
-  alert('Aquí abriremos el modal de crear cotización en el siguiente paso.')
-  // Puedes redirigir a una ruta /nueva-cotizacion o abrir un modal
+// NUEVAS VARIABLES PARA EL MODAL
+const mostrarModalPresupuesto = ref(false)
+const clienteSeleccionadoId = ref(null)
+const clientes = ref([])
+
+const abrirModalCrear = async () => {
+  // Cargamos los clientes para que puedas elegir a quién cotizarle
+  try {
+    const { data } = await api.get('/clientes')
+    clientes.value = data
+
+    // Si solo hay un cliente o para forzar la selección, lo dejamos en null
+    clienteSeleccionadoId.value = null
+    mostrarModalPresupuesto.value = true
+  } catch (err) {
+    alert('Error al cargar clientes')
+  }
+}
+
+const cerrarModalPresupuesto = () => {
+  mostrarModalPresupuesto.value = false
+  cargarCotizaciones() // Recargamos la tabla al cerrar
 }
 
 onMounted(cargarCotizaciones)
