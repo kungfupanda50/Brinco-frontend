@@ -176,8 +176,9 @@
 <script setup>
 import Presupuesto from './Presupuesto.vue'
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api/axios'
-
+const router = useRouter()
 const cargando = ref(true)
 const cotizaciones = ref([])
 
@@ -240,8 +241,8 @@ const reimprimir = async (id) => {
 }
 
 const generarOrden = (id) => {
-  // Redirigir a la vista de Nueva Orden pasándole el presupuesto_id
-  window.location.href = `/nueva-orden?presupuesto_id=${id}`
+  // Usamos el enrutador de Vue en lugar de window.location
+  router.push({ path: '/nueva-orden', query: { presupuesto_id: id } })
 }
 
 // NUEVAS VARIABLES PARA EL MODAL
