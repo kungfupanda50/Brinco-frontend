@@ -464,10 +464,10 @@
 
       <!-- Footer de Liquidación y Acciones -->
       <footer
-        class="p-8 bg-white border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] flex flex-col md:flex-row justify-between items-center gap-8"
+        class="p-6 bg-white border-t border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6"
       >
-        <div class="flex flex-wrap gap-6 w-full md:w-auto items-end">
-          <div class="flex flex-col gap-1.5 flex-1 md:w-32">
+        <div class="flex flex-wrap gap-4 w-full lg:w-auto items-end justify-center">
+          <div class="flex flex-col gap-1.5 w-32">
             <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Costo Envío</label>
             <input
               v-model.number="presupuesto.costo_envio"
@@ -476,7 +476,7 @@
               class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none"
             />
           </div>
-          <div class="flex flex-col gap-1.5 flex-1 md:w-32">
+          <div class="flex flex-col gap-1.5 w-32">
             <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Descuento</label>
             <input
               v-model.number="presupuesto.descuento"
@@ -496,7 +496,7 @@
                 @change="calcularTotales"
                 class="w-4 h-4 rounded border-slate-300 text-[#06b6d4] focus:ring-[#06b6d4]"
               />
-              Aplicar IPSP (0.5%)
+              Aplicar IPSP
             </label>
             <span v-if="aplicaIpsp" class="text-xs font-black text-amber-500 ml-2"
               >- Q {{ valorIpsp.toFixed(2) }}</span
@@ -504,46 +504,46 @@
           </div>
         </div>
 
-        <div class="flex flex-col md:flex-row items-center gap-8 w-full md:w-auto">
+        <div class="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
           <div
             v-if="!presupuestoSeleccionado"
-            class="bg-slate-900 px-8 py-4 rounded-3xl text-right min-w-[240px]"
+            class="bg-slate-900 px-6 py-3 rounded-2xl text-right w-full lg:w-auto"
           >
             <p class="text-[#06b6d4] text-[10px] font-black uppercase tracking-widest mb-1">
-              Total Final Cotización
+              Total Final
             </p>
-            <p class="text-4xl font-black text-white">
+            <p class="text-3xl font-black text-white">
               {{ monedaSimbolo }} {{ presupuesto.total.toFixed(2) }}
             </p>
           </div>
 
-          <div class="flex gap-3 w-full md:w-auto">
+          <div class="flex gap-3 w-full lg:w-auto">
             <button
               @click="$emit('cerrar')"
-              class="flex-1 md:flex-none px-8 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+              class="flex-1 lg:flex-none px-6 py-3 bg-slate-100 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
             >
               Cancelar
             </button>
             <button
               @click="guardarPresupuesto"
               :disabled="guardando"
-              class="flex-[2] md:flex-none px-10 py-4 bg-[#06b6d4] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              class="flex-[2] lg:flex-none px-8 py-3 bg-[#06b6d4] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <span
                 v-if="guardando"
                 class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
               ></span>
-              <span v-else class="material-icons">{{
+              <span v-else class="material-icons text-sm">{{
                 presupuestoSeleccionado ? 'print' : 'picture_as_pdf'
               }}</span>
               {{
                 presupuestoSeleccionado
                   ? guardando
                     ? 'REIMPRIMIENDO...'
-                    : 'REIMPRIMIR PDF'
+                    : 'REIMPRIMIR'
                   : guardando
                     ? 'GENERANDO...'
-                    : 'GUARDAR Y GENERAR PDF'
+                    : 'GUARDAR PDF'
               }}
             </button>
           </div>
@@ -598,9 +598,13 @@ const monedaSimbolo = computed(() => {
   return m ? m.simbolo : 'Q'
 })
 
-// NUEVO: Cálculo del Timbre de Prensa (0.5%)
+// Cálculo del Timbre de Prensa (0.5% sobre base sin IVA)
 const valorIpsp = computed(() => {
-  return aplicaIpsp.value ? presupuesto.subtotal * 0.005 : 0
+  if (!aplicaIpsp.value) return 0
+  const baseConIva =
+    (parseFloat(presupuesto.subtotal) || 0) + (parseFloat(presupuesto.costo_envio) || 0)
+  const baseSinIva = baseConIva / 1.12
+  return baseSinIva * 0.005
 })
 
 const formatDate = (dateStr) => {
