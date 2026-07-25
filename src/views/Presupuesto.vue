@@ -466,7 +466,7 @@
       <footer
         class="p-8 bg-white border-t border-slate-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] flex flex-col md:flex-row justify-between items-center gap-8"
       >
-        <div class="flex gap-6 w-full md:w-auto">
+        <div class="flex flex-wrap gap-6 w-full md:w-auto items-end">
           <div class="flex flex-col gap-1.5 flex-1 md:w-32">
             <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Costo Envío</label>
             <input
@@ -485,18 +485,8 @@
               class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none"
             />
           </div>
-          <div class="flex flex-col gap-1.5 flex-1 md:w-32">
-            <label class="text-[9px] font-black text-slate-400 uppercase ml-2">Descuento</label>
-            <input
-              v-model.number="presupuesto.descuento"
-              @input="calcularTotales"
-              type="number"
-              class="w-full p-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none"
-            />
-          </div>
 
-          <!-- NUEVO: CHECKBOX IPSP -->
-          <div class="flex flex-col gap-1.5 justify-end pb-2">
+          <div class="flex flex-col gap-1.5 justify-center pb-3">
             <label
               class="text-[9px] font-black text-slate-400 uppercase ml-2 flex items-center gap-2 cursor-pointer"
             >
