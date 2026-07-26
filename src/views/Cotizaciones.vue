@@ -169,39 +169,115 @@
       </div>
     </div>
 
-    <!-- MODAL REAL DE PRESUPUESTO -->
+    <!-- MODAL SELECCIÓN DE CLIENTE (PARA NUEVA COTIZACIÓN) -->
+    <div
+      v-if="mostrarModalCrear && !clienteSeleccionadoId"
+      class="fixed inset-0 z-[600] flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="mostrarModalCrear = false"
+      ></div>
+      <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
+        <h2 class="text-2xl font-black text-slate-900 mb-6">Nueva Cotización</h2>
+        <p class="text-sm text-slate-500 mb-4">Selecciona el cliente para generar la cotización:</p>
+
+        <select
+          v-model="clienteSeleccionadoId"
+          class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-bold text-slate-700 mb-6"
+        >
+          <option :value="null" disabled>Seleccione un cliente...</option>
+          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nombre_completo }}</option>
+        </select>
+
+        <div class="flex justify-end gap-3">
+          <button
+            @click="mostrarModalCrear = false"
+            class="px-6 py-3 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase hover:bg-slate-200 transition-all"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REAL DE PRESUPUESTO (NUEVA COTIZACIÓN) -->
+    <Presupuesto
+      v-if="mostrarModalCrear && clienteSeleccionadoId"
+      :cliente-id="clienteSeleccionadoId"
+      @cerrar="cerrarModalCrear"
+    />
+
+    <!-- MODAL SELECCIÓN DE CLIENTE (PARA NUEVA COTIZACIÓN) -->
+    <div
+      v-if="mostrarModalCrear && !clienteSeleccionadoId"
+      class="fixed inset-0 z-[600] flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="mostrarModalCrear = false"
+      ></div>
+      <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
+        <h2 class="text-2xl font-black text-slate-900 mb-6">Nueva Cotización</h2>
+        <p class="text-sm text-slate-500 mb-4">Selecciona el cliente para generar la cotización:</p>
+
+        <select
+          v-model="clienteSeleccionadoId"
+          class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 font-bold text-slate-700 mb-6"
+        >
+          <option :value="null" disabled>Seleccione un cliente...</option>
+          <option v-for="c in clientes" :key="c.id" :value="c.id">{{ c.nombre_completo }}</option>
+        </select>
+
+        <div class="flex justify-end gap-3">
+          <button
+            @click="mostrarModalCrear = false"
+            class="px-6 py-3 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase hover:bg-slate-200 transition-all"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL REAL DE PRESUPUESTO (NUEVA COTIZACIÓN) -->
+    <Presupuesto
+      v-if="mostrarModalCrear && clienteSeleccionadoId"
+      :cliente-id="clienteSeleccionadoId"
+      @cerrar="cerrarModalCrear"
+    />
+
+    <!-- MODAL REAL DE PRESUPUESTO (EDITAR COTIZACIÓN) -->
     <Presupuesto
       v-if="mostrarModalEditar"
-      :cliente-id="clienteSeleccionadoId"
-      :presupuesto-id="editarPresupuestoId"
-      @cerrar="
-        () => {
-          mostrarModalEditar = false
-          cargarCotizaciones()
-        }
-      "
+      :cliente-id="clienteEditarId"
+      :presupuesto-id="cotizacionEditarId"
+      @cerrar="cerrarModalEditar"
+    />
+
     />
   </div>
 </template>
 
 <script setup>
-import Presupuesto from './Presupuesto.vue'
-
-const mostrarModalEditar = ref(false)
-const editarPresupuestoId = ref(null)
-
-const editarCotizacion = (c) => {
-  editarPresupuestoId.value = c.id
-  clienteSeleccionadoId.value = c.cliente_id
-  mostrarModalEditar.value = true
-}
-
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/axios'
+import Presupuesto from './Presupuesto.vue'
+
 const router = useRouter()
 const cargando = ref(true)
 const cotizaciones = ref([])
+const clientes = ref([])
+
+// Variables para NUEVA cotización
+const mostrarModalCrear = ref(false)
+const clienteSeleccionadoId = ref(null)
+
+// Variables para EDITAR cotización
+const mostrarModalEditar = ref(false)
+const clienteEditarId = ref(null)
+const cotizacionEditarId = ref(null)
 
 const cargarCotizaciones = async () => {
   try {
@@ -216,9 +292,7 @@ const cargarCotizaciones = async () => {
   }
 }
 
-const saldo = (c) => {
-  return Number(c.total) - Number(c.total_pagado || 0)
-}
+const saldo = (c) => Number(c.total) - Number(c.total_pagado || 0)
 
 const estadoColor = (estado) => {
   switch (estado) {
@@ -262,32 +336,34 @@ const reimprimir = async (id) => {
 }
 
 const generarOrden = (id) => {
-  // Usamos el enrutador de Vue en lugar de window.location
   router.push({ path: '/nueva-orden', query: { presupuesto_id: id } })
 }
 
-// NUEVAS VARIABLES PARA EL MODAL
-const mostrarModalPresupuesto = ref(false)
-const clienteSeleccionadoId = ref(null)
-const clientes = ref([])
-
 const abrirModalCrear = async () => {
-  // Cargamos los clientes para que puedas elegir a quién cotizarle
   try {
     const { data } = await api.get('/clientes')
     clientes.value = data
-
-    // Si solo hay un cliente o para forzar la selección, lo dejamos en null
     clienteSeleccionadoId.value = null
-    mostrarModalPresupuesto.value = true
+    mostrarModalCrear.value = true
   } catch (err) {
     alert('Error al cargar clientes')
   }
 }
 
-const cerrarModalPresupuesto = () => {
-  mostrarModalPresupuesto.value = false
-  cargarCotizaciones() // Recargamos la tabla al cerrar
+const cerrarModalCrear = () => {
+  mostrarModalCrear.value = false
+  cargarCotizaciones()
+}
+
+const editarCotizacion = (c) => {
+  clienteEditarId.value = c.cliente_id
+  cotizacionEditarId.value = c.id
+  mostrarModalEditar.value = true
+}
+
+const cerrarModalEditar = () => {
+  mostrarModalEditar.value = false
+  cargarCotizaciones()
 }
 
 onMounted(cargarCotizaciones)
