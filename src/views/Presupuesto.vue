@@ -15,10 +15,25 @@
               class="bg-cyan-50 text-[#06b6d4] px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-cyan-100"
               >Módulo de Ventas</span
             >
+            <!-- NUEVO: Badge de número de cotización si está editando -->
+            <span
+              v-if="cotizacionInfo.numero"
+              class="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
+            >
+              Editando: {{ cotizacionInfo.numero }}
+            </span>
           </div>
-          <h2 class="text-3xl font-black text-slate-900">Generar Cotización</h2>
+          <!-- NUEVO: Título cambia si es edición o nueva -->
+          <h2 class="text-3xl font-black text-slate-900">
+            {{ cotizacionInfo.numero ? 'Editar Cotización' : 'Generar Cotización' }}
+          </h2>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-            Configuración técnica de presupuesto personalizado
+            <!-- NUEVO: Muestra el cliente si está editando -->
+            {{
+              cotizacionInfo.cliente
+                ? cotizacionInfo.cliente
+                : 'Configuración técnica de presupuesto personalizado'
+            }}
           </p>
         </div>
         <button
@@ -585,7 +600,7 @@ const historialPresupuestos = ref([])
 const presupuestoSeleccionado = ref(null)
 const actualizarFecha = ref(false)
 const aplicaIpsp = ref(false)
-
+const cotizacionInfo = ref({ numero: null, cliente: null })
 const presupuesto = reactive({
   plantilla_id: null,
   moneda_id: 1,
@@ -668,6 +683,8 @@ onMounted(async () => {
     // Si es edición, cargar datos de la cotización
     if (props.presupuestoId) {
       const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
+      cotizacionInfo.value.numero = data.numero_cotizacion
+      cotizacionInfo.value.cliente = data.cliente_nombre
       presupuesto.plantilla_id = data.tema_id
       presupuesto.moneda_id = data.moneda_id
       presupuesto.costo_envio = Number(data.costo_envio) || 0
