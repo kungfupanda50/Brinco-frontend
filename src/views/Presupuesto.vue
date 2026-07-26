@@ -663,6 +663,7 @@ onMounted(async () => {
     inventario.value = resInv.data
 
     // Si es edición, cargar datos de la cotización
+    // Si es edición, cargar datos de la cotización
     if (props.presupuestoId) {
       const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
       presupuesto.plantilla_id = data.tema_id
@@ -673,15 +674,28 @@ onMounted(async () => {
       presupuesto.texto_adicional = data.texto_adicional || ''
       aplicaIpsp.value = data.aplica_ipsp == 1
 
-      // CONVERTIMOS TODO A NÚMEROS PARA EVITAR EL COLAPSO DE VUE
-      presupuesto.lineas = (data.detalles || []).map((d) => ({
+      // CONVERTIMOS TODO A NÚMEROS Y ASIGNAMOS IMÁGENES
+      presupuesto.lineas = (data.detalles || []).map(d => ({
         ...d,
         total_linea: Number(d.total_linea),
         precio_unitario: Number(d.precio_unitario),
         cantidad: Number(d.cantidad),
         metadata: { ancho: 0, alto: 0 },
-        imagenes: [],
+        imagenes: d.imagenes || [] // AQUÍ ASIGNAMOS LAS IMÁGENES DE LA LÍNEA
       }))
+
+      presupuesto.materiales = (data.materiales || []).map(m => ({
+        producto_id: m.producto_id,
+        cantidad: Number(m.cantidad),
+        costo_unitario: Number(m.costo_unitario),
+        precio_venta: Number(m.precio_venta)
+      }))
+
+      // NUEVO: Asignar imágenes sueltas
+      presupuesto.imagenes_sueltas = data.imagenes_sueltas || []
+    } else {
+      agregarLinea()
+    }
 
       presupuesto.materiales = (data.materiales || []).map((m) => ({
         producto_id: m.producto_id,
