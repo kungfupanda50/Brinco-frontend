@@ -662,26 +662,33 @@ onMounted(async () => {
     const resInv = await api.get('/inventario')
     inventario.value = resInv.data
 
-    const def = plantillas.value.find((p) => p.is_default === 1)
-    presupuesto.plantilla_id = def ? def.id : plantillas.value[0]?.id || null
-
     // Si es edición, cargar datos de la cotización
     if (props.presupuestoId) {
       const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
       presupuesto.plantilla_id = data.tema_id
       presupuesto.moneda_id = data.moneda_id
-      presupuesto.costo_envio = data.costo_envio || 0
-      presupuesto.descuento = data.descuento || 0
+      presupuesto.costo_envio = Number(data.costo_envio) || 0
+      presupuesto.descuento = Number(data.descuento) || 0
+      presupuesto.total = Number(data.total) || 0
       presupuesto.texto_adicional = data.texto_adicional || ''
       aplicaIpsp.value = data.aplica_ipsp == 1
 
-      // ASEGURAMOS QUE METADATA EXISTA PARA QUE VUE NO COLAPSE
+      // CONVERTIMOS TODO A NÚMEROS PARA EVITAR EL COLAPSO DE VUE
       presupuesto.lineas = (data.detalles || []).map((d) => ({
         ...d,
+        total_linea: Number(d.total_linea),
+        precio_unitario: Number(d.precio_unitario),
+        cantidad: Number(d.cantidad),
         metadata: { ancho: 0, alto: 0 },
         imagenes: [],
       }))
-      presupuesto.materiales = data.materiales || []
+
+      presupuesto.materiales = (data.materiales || []).map((m) => ({
+        producto_id: m.producto_id,
+        cantidad: Number(m.cantidad),
+        costo_unitario: Number(m.costo_unitario),
+        precio_venta: Number(m.precio_venta),
+      }))
     } else {
       agregarLinea()
     }
