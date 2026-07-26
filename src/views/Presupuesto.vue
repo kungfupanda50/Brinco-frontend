@@ -128,6 +128,79 @@
               </div>
             </section>
 
+            <!-- NUEVO: INSUMOS Y MATERIALES (USO INTERNO) -->
+            <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-6">
+                <span class="material-icons text-slate-400">inventory_2</span>
+                <h3 class="font-black text-slate-800 text-xs uppercase tracking-widest">
+                  Insumos y Materiales (Uso Interno)
+                </h3>
+                <button
+                  @click="agregarMaterial"
+                  class="ml-auto text-[#06b6d4] font-black text-[10px] uppercase tracking-widest hover:underline flex items-center gap-1"
+                >
+                  <span class="material-icons text-sm">add_circle</span> Añadir
+                </button>
+              </div>
+              <div class="space-y-4">
+                <div
+                  v-for="(mat, index) in presupuesto.materiales"
+                  :key="index"
+                  class="grid grid-cols-12 gap-4 items-center bg-slate-50 p-4 rounded-2xl"
+                >
+                  <div class="col-span-6">
+                    <select
+                      v-model="mat.producto_id"
+                      @change="actualizarInfoMaterial(index)"
+                      class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none focus:ring-2 focus:ring-[#06b6d4]/20 rounded-lg p-1"
+                    >
+                      <option value="">Seleccionar producto...</option>
+                      <option
+                        v-for="p in inventario"
+                        :key="p.id"
+                        :value="p.id"
+                        :disabled="!p.activo"
+                      >
+                        {{ p.nombre }} (Stock: {{ p.stock_actual }})
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-span-2">
+                    <input
+                      v-model.number="mat.cantidad"
+                      type="number"
+                      step="0.01"
+                      class="w-full text-center py-1 bg-white border-none rounded-lg font-black text-sm outline-none focus:ring-2 focus:ring-[#06b6d4]/20"
+                      placeholder="Cant."
+                    />
+                  </div>
+                  <div class="col-span-2 text-right">
+                    <span class="text-slate-400 text-xs">Costo: Q</span>
+                    <span class="font-bold text-slate-600 text-sm">{{
+                      (mat.cantidad * mat.costo_unitario).toFixed(2)
+                    }}</span>
+                  </div>
+                  <div class="col-span-2 flex items-center justify-end gap-2">
+                    <span class="text-[#06b6d4] font-black text-sm"
+                      >Q {{ (mat.cantidad * mat.precio_venta).toFixed(2) }}</span
+                    >
+                    <button
+                      @click="removerMaterial(index)"
+                      class="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <span class="material-icons text-lg">delete_outline</span>
+                    </button>
+                  </div>
+                </div>
+                <p
+                  v-if="presupuesto.materiales.length === 0"
+                  class="text-center text-slate-400 text-xs py-4 font-bold uppercase"
+                >
+                  No se han agregado insumos internos.
+                </p>
+              </div>
+            </section>
+
             <!-- 2. Tabla Dinámica de Líneas -->
             <section>
               <div class="flex justify-between items-end mb-6 px-2">
@@ -372,78 +445,7 @@
                 </label>
               </div>
             </section>
-            <!-- NUEVO: INSUMOS Y MATERIALES (USO INTERNO) -->
-            <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-              <div class="flex items-center gap-3 mb-6">
-                <span class="material-icons text-slate-400">inventory_2</span>
-                <h3 class="font-black text-slate-800 text-xs uppercase tracking-widest">
-                  Insumos y Materiales (Uso Interno)
-                </h3>
-                <button
-                  @click="agregarMaterial"
-                  class="ml-auto text-[#06b6d4] font-black text-[10px] uppercase tracking-widest hover:underline flex items-center gap-1"
-                >
-                  <span class="material-icons text-sm">add_circle</span> Añadir
-                </button>
-              </div>
-              <div class="space-y-4">
-                <div
-                  v-for="(mat, index) in presupuesto.materiales"
-                  :key="index"
-                  class="grid grid-cols-12 gap-4 items-center bg-slate-50 p-4 rounded-2xl"
-                >
-                  <div class="col-span-6">
-                    <select
-                      v-model="mat.producto_id"
-                      @change="actualizarInfoMaterial(index)"
-                      class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none focus:ring-2 focus:ring-[#06b6d4]/20 rounded-lg p-1"
-                    >
-                      <option value="">Seleccionar producto...</option>
-                      <option
-                        v-for="p in inventario"
-                        :key="p.id"
-                        :value="p.id"
-                        :disabled="!p.activo"
-                      >
-                        {{ p.nombre }} (Stock: {{ p.stock_actual }})
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-span-2">
-                    <input
-                      v-model.number="mat.cantidad"
-                      type="number"
-                      step="0.01"
-                      class="w-full text-center py-1 bg-white border-none rounded-lg font-black text-sm outline-none focus:ring-2 focus:ring-[#06b6d4]/20"
-                      placeholder="Cant."
-                    />
-                  </div>
-                  <div class="col-span-2 text-right">
-                    <span class="text-slate-400 text-xs">Costo: Q</span>
-                    <span class="font-bold text-slate-600 text-sm">{{
-                      (mat.cantidad * mat.costo_unitario).toFixed(2)
-                    }}</span>
-                  </div>
-                  <div class="col-span-2 flex items-center justify-end gap-2">
-                    <span class="text-[#06b6d4] font-black text-sm"
-                      >Q {{ (mat.cantidad * mat.precio_venta).toFixed(2) }}</span
-                    >
-                    <button
-                      @click="removerMaterial(index)"
-                      class="p-1 text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <span class="material-icons text-lg">delete_outline</span>
-                    </button>
-                  </div>
-                </div>
-                <p
-                  v-if="presupuesto.materiales.length === 0"
-                  class="text-center text-slate-400 text-xs py-4 font-bold uppercase"
-                >
-                  No se han agregado insumos internos.
-                </p>
-              </div>
-            </section>
+
             <!-- Texto Adicional -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div class="flex flex-col gap-2">
@@ -560,6 +562,7 @@ import api from '../api/axios'
 const props = defineProps({
   clienteId: { type: Number, required: true },
   ordenId: { type: Number, default: null },
+  presupuestoId: { type: Number, default: null }, // NUEVO
 })
 const emit = defineEmits(['cerrar'])
 
@@ -602,8 +605,10 @@ const monedaSimbolo = computed(() => {
 const valorIpsp = computed(() => {
   if (!aplicaIpsp.value) return 0
   const baseConIva =
-    (parseFloat(presupuesto.subtotal) || 0) + (parseFloat(presupuesto.costo_envio) || 0)
-  const baseSinIva = baseConIva / 1.12
+    (parseFloat(presupuesto.subtotal) || 0) +
+    (parseFloat(presupuesto.costo_envio) || 0) -
+    (parseFloat(presupuesto.descuento) || 0)
+  const baseSinIva = baseConIva / 1.05 // 5% de IVA
   return baseSinIva * 0.005
 })
 
@@ -635,6 +640,19 @@ onMounted(async () => {
       }
     } else {
       throw new Error('No se encontraron temas en la respuesta')
+    }
+
+    // Si es edición, cargar datos
+    if (props.presupuestoId) {
+      const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
+      presupuesto.plantilla_id = data.tema_id
+      presupuesto.moneda_id = data.moneda_id
+      presupuesto.costo_envio = data.costo_envio
+      presupuesto.descuento = data.descuento
+      presupuesto.texto_adicional = data.texto_adicional
+      aplicaIpsp.value = data.aplica_ipsp == 1
+      presupuesto.lineas = data.detalles
+      presupuesto.materiales = data.materiales
     }
 
     // Cargar inventario para los materiales
@@ -698,11 +716,11 @@ const actualizarInfoMaterial = (index) => {
 const calcularTotales = () => {
   let sub = presupuesto.lineas.reduce((acc, l) => acc + (parseFloat(l.total_linea) || 0), 0)
   presupuesto.subtotal = sub
-  // Total = Subtotal + Envío - Descuento - IPSP
+  // Se SUMA el IPSP
   presupuesto.total =
     sub +
     (parseFloat(presupuesto.costo_envio) || 0) -
-    (parseFloat(presupuesto.descuento) || 0) -
+    (parseFloat(presupuesto.descuento) || 0) +
     valorIpsp.value
 }
 

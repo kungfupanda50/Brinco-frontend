@@ -97,7 +97,13 @@
                 >
                   <span class="material-icons text-lg">picture_as_pdf</span>
                 </button>
-
+                <button
+                  @click="editarCotizacion(c)"
+                  class="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
+                  title="Editar Cotización"
+                >
+                  <span class="material-icons text-lg">edit_note</span>
+                </button>
                 <button
                   v-if="c.estado.toLowerCase() === 'borrador'"
                   @click="cambiarEstado(c.id, 'Aceptada')"
@@ -165,16 +171,31 @@
 
     <!-- MODAL REAL DE PRESUPUESTO -->
     <Presupuesto
-      v-if="mostrarModalPresupuesto && clienteSeleccionadoId"
+      v-if="mostrarModalEditar"
       :cliente-id="clienteSeleccionadoId"
-      :orden-id="null"
-      @cerrar="cerrarModalPresupuesto"
+      :presupuesto-id="editarPresupuestoId"
+      @cerrar="
+        () => {
+          mostrarModalEditar = false
+          cargarCotizaciones()
+        }
+      "
     />
   </div>
 </template>
 
 <script setup>
 import Presupuesto from './Presupuesto.vue'
+
+const mostrarModalEditar = ref(false)
+const editarPresupuestoId = ref(null)
+
+const editarCotizacion = (c) => {
+  editarPresupuestoId.value = c.id
+  clienteSeleccionadoId.value = c.cliente_id
+  mostrarModalEditar.value = true
+}
+
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/axios'

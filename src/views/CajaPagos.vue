@@ -658,8 +658,9 @@ onMounted(cargarDatos)
                       : 'bg-slate-100 text-slate-500'
                   "
                 >
-                  Orden de trabajo
+                  Cotización / Proyecto
                 </button>
+
                 <button
                   type="button"
                   @click="seleccionarOrigenGeneral"

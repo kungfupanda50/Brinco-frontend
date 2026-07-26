@@ -266,7 +266,25 @@ const CardOrden = defineComponent({
         },
         [
           h('div', { class: 'flex justify-between items-start mb-4' }, [
-            h('span', { class: 'text-[10px] font-mono text-slate-400' }, `ORD-#${props.orden.id}`),
+            // LADO IZQUIERDO: Número de Cotización (si existe) y No. de Orden
+            h('div', { class: 'flex flex-col' }, [
+              props.orden.presupuesto_num
+                ? h(
+                    'span',
+                    {
+                      class:
+                        'text-[10px] font-black text-[#06b6d4] bg-cyan-50 px-2 py-0.5 rounded uppercase border border-cyan-100 mb-1',
+                    },
+                    `COTIZ: ${props.orden.presupuesto_num}`,
+                  )
+                : null,
+              h(
+                'span',
+                { class: 'text-[10px] font-mono text-slate-400' },
+                `ORD-#${props.orden.id}`,
+              ),
+            ]),
+            // LADO DERECHO: Stock y Fecha (exactamente como lo tenías)
             h('div', { class: 'flex items-center gap-1.5' }, [
               props.orden.stock_rebajado
                 ? h(

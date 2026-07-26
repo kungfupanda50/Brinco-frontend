@@ -296,9 +296,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../api/axios'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute() // NUEVO: Para leer la URL
 const inventario = ref([])
 const clientes = ref([])
 const procesando = ref(false)
@@ -306,6 +307,7 @@ const errorCarga = ref(null)
 
 const orden = ref({
   cliente_id: '',
+  presupuesto_id: null, // NUEVO
   fecha_entrega: '',
   cargo_admin: 0,
   mano_obra: 0,
@@ -383,6 +385,28 @@ const cargarDatos = async () => {
     const [resInv, resCli] = await Promise.all([api.get('/inventario'), api.get('/clientes')])
     if (resInv.data) inventario.value = resInv.data
     if (resCli.data) clientes.value = resCli.data
+
+    // NUEVO: Si viene de una cotización, cargar sus datos
+    if (route.query.presupuesto_id) {
+      const { data } = await api.get(`/presupuestos/${route.query.presupuesto_id}/full`)
+      orden.value.cliente_id = data.cliente_id
+      orden.value.presupuesto_id = data.id
+      orden.value.envio = data.costo_envio || 0
+
+      // Cargamos los materiales automáticamente
+      orden.value.materiales = data.materiales.map((m) => ({
+        producto_id: m.producto_id,
+        cantidad: m.cantidad,
+        costo_unitario: m.costo_unitario,
+        precio_venta: m.precio_venta,
+      }))
+
+      let notasAuto = `Cotización #${data.id} aceptada por el cliente.\nDetalle a producir:\n`
+      data.detalles.forEach((d) => {
+        notasAuto += `- ${d.cantidad} x ${d.descripcion}\n`
+      })
+      orden.value.notas = notasAuto
+    }
   } catch (err) {
     console.error('Error cargando datos:', err)
     errorCarga.value =
@@ -417,6 +441,7 @@ const generarOrden = async () => {
     procesando.value = true
     const payload = {
       cliente_id: orden.value.cliente_id,
+      presupuesto_id: orden.value.presupuesto_id, // NUEVO
       fecha_entrega: orden.value.fecha_entrega,
       subtotal: totalVentaMateriales.value,
       costo_materiales: totalCostoInternoMateriales.value,
