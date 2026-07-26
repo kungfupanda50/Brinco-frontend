@@ -128,7 +128,7 @@
               </div>
             </section>
 
-            <!-- NUEVO: INSUMOS Y MATERIALES (USO INTERNO) - AHORA VA ARRIBA -->
+            <!-- INSUMOS Y MATERIALES (USO INTERNO) - VA ARRIBA -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div class="flex items-center gap-3 mb-6">
                 <span class="material-icons text-slate-400">inventory_2</span>
@@ -200,7 +200,7 @@
                   No se han agregado insumos internos.
                 </p>
 
-                <!-- NUEVO: Total de insumos -->
+                <!-- Total de insumos -->
                 <div
                   v-if="presupuesto.materiales.length > 0"
                   class="flex justify-end pt-4 border-t border-slate-100 mt-4"
@@ -274,7 +274,6 @@
 
                     <!-- Campos Técnicos (Medidas si aplica) -->
                     <div class="lg:col-span-3 space-y-4">
-                      <!-- NUEVOS CAMPOS: Color y Medidas -->
                       <div class="flex flex-col gap-1.5">
                         <label class="text-[9px] font-black text-slate-400 uppercase">Color</label>
                         <input
@@ -295,8 +294,6 @@
                           placeholder="Ej: 10x15 cm"
                         />
                       </div>
-
-                      <!-- Campo de Cantidad (el que ya tenías) -->
                       <div class="flex flex-col gap-1.5">
                         <label class="text-[9px] font-black text-slate-400 uppercase"
                           >Cantidad</label
@@ -362,7 +359,6 @@
                     >
                       <img :src="img.url" class="w-full h-full object-cover" />
 
-                      <!-- Botón para alternar tamaño -->
                       <button
                         @click="img.grande = !img.grande"
                         class="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center transition-all"
@@ -378,7 +374,6 @@
                         }}</span>
                       </button>
 
-                      <!-- Botón de eliminar -->
                       <button
                         @click="linea.imagenes.splice(i, 1)"
                         class="absolute top-0 left-0 w-5 h-5 bg-red-500/80 text-white opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-br"
@@ -423,7 +418,6 @@
                 >
                   <img :src="img.url" class="w-full h-full object-cover" />
 
-                  <!-- Botón para alternar tamaño -->
                   <button
                     @click="img.grande = !img.grande"
                     class="absolute bottom-0 right-0 w-6 h-6 flex items-center justify-center transition-all"
@@ -439,7 +433,6 @@
                     }}</span>
                   </button>
 
-                  <!-- Botón de eliminar -->
                   <button
                     @click="presupuesto.imagenes_sueltas.splice(i, 1)"
                     class="absolute top-1 right-1 w-6 h-6 bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -517,7 +510,7 @@
               Aplicar IPSP
             </label>
             <span v-if="aplicaIpsp" class="text-xs font-black text-amber-500 ml-2"
-              >- Q {{ valorIpsp.toFixed(2) }}</span
+              >+ Q {{ valorIpsp.toFixed(2) }}</span
             >
           </div>
         </div>
@@ -578,7 +571,7 @@ import api from '../api/axios'
 const props = defineProps({
   clienteId: { type: Number, required: true },
   ordenId: { type: Number, default: null },
-  presupuestoId: { type: Number, default: null }, // NUEVO
+  presupuestoId: { type: Number, default: null }, // NUEVO: Para editar
 })
 const emit = defineEmits(['cerrar'])
 
@@ -586,12 +579,12 @@ const cargando = ref(true)
 const guardando = ref(false)
 const plantillas = ref([])
 const monedas = ref([])
-const inventario = ref([]) // NUEVO: Para los materiales
+const inventario = ref([])
 
 const historialPresupuestos = ref([])
 const presupuestoSeleccionado = ref(null)
 const actualizarFecha = ref(false)
-const aplicaIpsp = ref(false) // NUEVO: Checkbox Timbre de Prensa
+const aplicaIpsp = ref(false)
 
 const presupuesto = reactive({
   plantilla_id: null,
@@ -604,7 +597,7 @@ const presupuesto = reactive({
   subtotal: 0,
   total: 0,
   texto_adicional: '',
-  materiales: [], // NUEVO: Insumos internos
+  materiales: [],
 })
 
 const estructuraActual = computed(() => {
@@ -617,18 +610,18 @@ const monedaSimbolo = computed(() => {
   return m ? m.simbolo : 'Q'
 })
 
-// Cálculo del Timbre de Prensa (0.5% sobre base sin IVA)
+// Cálculo del Timbre de Prensa (0.5% sobre base sin IVA del 5%)
 const valorIpsp = computed(() => {
   if (!aplicaIpsp.value) return 0
   const baseConIva =
     (parseFloat(presupuesto.subtotal) || 0) +
     (parseFloat(presupuesto.costo_envio) || 0) -
     (parseFloat(presupuesto.descuento) || 0)
-  const baseSinIva = baseConIva / 1.05 // 5% de IVA
+  const baseSinIva = baseConIva / 1.05
   return baseSinIva * 0.005
 })
 
-// NUEVO: Cálculo del costo total de insumos internos
+// Cálculo del costo total de insumos internos
 const totalCostoMateriales = computed(() => {
   return presupuesto.materiales.reduce(
     (acc, m) => acc + Number(m.cantidad) * Number(m.costo_unitario || 0),
@@ -666,27 +659,27 @@ onMounted(async () => {
       throw new Error('No se encontraron temas en la respuesta')
     }
 
-    // Si es edición, cargar datos
-    if (props.presupuestoId) {
-      const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
-      presupuesto.plantilla_id = data.tema_id
-      presupuesto.moneda_id = data.moneda_id
-      presupuesto.costo_envio = data.costo_envio
-      presupuesto.descuento = data.descuento
-      presupuesto.texto_adicional = data.texto_adicional
-      aplicaIpsp.value = data.aplica_ipsp == 1
-      presupuesto.lineas = data.detalles
-      presupuesto.materiales = data.materiales
-    }
-
-    // Cargar inventario para los materiales
     const resInv = await api.get('/inventario')
     inventario.value = resInv.data
 
     const def = plantillas.value.find((p) => p.is_default === 1)
     presupuesto.plantilla_id = def ? def.id : plantillas.value[0]?.id || null
 
-    agregarLinea()
+    // Si es edición, cargar datos de la cotización
+    if (props.presupuestoId) {
+      const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
+      presupuesto.plantilla_id = data.tema_id
+      presupuesto.moneda_id = data.moneda_id
+      presupuesto.costo_envio = data.costo_envio || 0
+      presupuesto.descuento = data.descuento || 0
+      presupuesto.texto_adicional = data.texto_adicional || ''
+      aplicaIpsp.value = data.aplica_ipsp == 1
+      presupuesto.lineas = data.detalles.map((d) => ({ ...d, imagenes: [] })) // Simplificado por ahora
+      presupuesto.materiales = data.materiales
+    } else {
+      agregarLinea()
+    }
+
     calcularTotales()
     await fetchHistorial()
   } catch (err) {
@@ -719,7 +712,6 @@ const calcularLinea = (linea) => {
   calcularTotales()
 }
 
-// NUEVAS: Funciones para materiales internos
 const agregarMaterial = () => {
   presupuesto.materiales.push({ producto_id: '', cantidad: 1, precio_venta: 0, costo_unitario: 0 })
 }
@@ -740,7 +732,7 @@ const actualizarInfoMaterial = (index) => {
 const calcularTotales = () => {
   let sub = presupuesto.lineas.reduce((acc, l) => acc + (parseFloat(l.total_linea) || 0), 0)
   presupuesto.subtotal = sub
-  // Se SUMA el IPSP
+  // Total = Subtotal + Envío - Descuento + IPSP
   presupuesto.total =
     sub +
     (parseFloat(presupuesto.costo_envio) || 0) -
@@ -748,8 +740,6 @@ const calcularTotales = () => {
     valorIpsp.value
 }
 
-// ... (Mantener tus funciones subirImagen, subirImagenSuelta, generarIA tal cual las tenías) ...
-// COPIO TUS FUNCIONES ORIGINALES PARA NO PERDERLAS:
 const subirImagen = async (event, linea) => {
   const file = event.target.files[0]
   if (!file) return
@@ -802,7 +792,6 @@ const generarIA = async (index) => {
 }
 
 const guardarPresupuesto = async () => {
-  // MODO REIMPRESIÓN
   if (presupuestoSeleccionado.value) {
     guardando.value = true
     const printWindow = window.open('', '_blank')
@@ -828,7 +817,6 @@ const guardarPresupuesto = async () => {
     return
   }
 
-  // MODO CREACIÓN NORMAL
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     alert('Permite las ventanas emergentes.')
@@ -837,8 +825,12 @@ const guardarPresupuesto = async () => {
   guardando.value = true
   calcularTotales()
   try {
-    const { data } = await api.post(
-      '/presupuestos',
+    // Si es edición, hacemos PUT, si no, POST
+    const url = props.presupuestoId ? `/presupuestos/${props.presupuestoId}` : '/presupuestos'
+    const method = props.presupuestoId ? 'put' : 'post'
+
+    const { data } = await api[method](
+      url,
       {
         ...presupuesto,
         aplica_ipsp: aplicaIpsp.value,
