@@ -674,8 +674,8 @@ onMounted(async () => {
       presupuesto.descuento = data.descuento || 0
       presupuesto.texto_adicional = data.texto_adicional || ''
       aplicaIpsp.value = data.aplica_ipsp == 1
-      presupuesto.lineas = data.detalles.map((d) => ({ ...d, imagenes: [] })) // Simplificado por ahora
-      presupuesto.materiales = data.materiales
+      presupuesto.lineas = (data.detalles || []).map((d) => ({ ...d, imagenes: [] }))
+      presupuesto.materiales = data.materiales || []
     } else {
       agregarLinea()
     }
