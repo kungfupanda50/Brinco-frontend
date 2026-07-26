@@ -674,14 +674,20 @@ onMounted(async () => {
       presupuesto.descuento = data.descuento || 0
       presupuesto.texto_adicional = data.texto_adicional || ''
       aplicaIpsp.value = data.aplica_ipsp == 1
-      presupuesto.lineas = (data.detalles || []).map((d) => ({ ...d, imagenes: [] }))
+
+      // ASEGURAMOS QUE METADATA EXISTA PARA QUE VUE NO COLAPSE
+      presupuesto.lineas = (data.detalles || []).map((d) => ({
+        ...d,
+        metadata: { ancho: 0, alto: 0 },
+        imagenes: [],
+      }))
       presupuesto.materiales = data.materiales || []
     } else {
       agregarLinea()
     }
 
     calcularTotales()
-    await fetchHistorial()
+    if (!props.presupuestoId) await fetchHistorial()
   } catch (err) {
     console.error('Error cargando datos iniciales:', err)
   } finally {
