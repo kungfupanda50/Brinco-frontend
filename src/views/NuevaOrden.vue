@@ -441,8 +441,8 @@ const generarOrden = async () => {
     procesando.value = true
     const payload = {
       cliente_id: orden.value.cliente_id,
-      presupuesto_id: orden.value.presupuesto_id, // NUEVO
-      fecha_entrega: orden.value.fecha_entrega,
+      presupuesto_id: orden.value.presupuesto_id,
+      fecha_entrega: orden.value.fecha_entrega || null, // <-- AGREGA || null
       subtotal: totalVentaMateriales.value,
       costo_materiales: totalCostoInternoMateriales.value,
       mano_obra: orden.value.mano_obra,
