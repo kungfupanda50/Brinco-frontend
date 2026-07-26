@@ -391,17 +391,17 @@ const cargarDatos = async () => {
       const { data } = await api.get(`/presupuestos/${route.query.presupuesto_id}/full`)
       orden.value.cliente_id = data.cliente_id
       orden.value.presupuesto_id = data.id
-      orden.value.envio = data.costo_envio || 0
+      orden.value.envio = Number(data.costo_envio) || 0
 
-      // Cargamos los materiales automáticamente
+      // Cargamos los materiales y forzamos que sean números
       orden.value.materiales = data.materiales.map((m) => ({
         producto_id: m.producto_id,
-        cantidad: m.cantidad,
-        costo_unitario: m.costo_unitario,
-        precio_venta: m.precio_venta,
+        cantidad: Number(m.cantidad),
+        costo_unitario: Number(m.costo_unitario),
+        precio_venta: Number(m.precio_venta),
       }))
 
-      let notasAuto = `Cotización #${data.id} aceptada por el cliente.\nDetalle a producir:\n`
+      let notasAuto = `Cotización #${data.numero_cotizacion || data.id} aceptada por el cliente.\nDetalle a producir:\n`
       data.detalles.forEach((d) => {
         notasAuto += `- ${d.cantidad} x ${d.descripcion}\n`
       })
