@@ -128,7 +128,7 @@
               </div>
             </section>
 
-            <!-- NUEVO: INSUMOS Y MATERIALES (USO INTERNO) -->
+            <!-- NUEVO: INSUMOS Y MATERIALES (USO INTERNO) - AHORA VA ARRIBA -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div class="flex items-center gap-3 mb-6">
                 <span class="material-icons text-slate-400">inventory_2</span>
@@ -192,12 +192,28 @@
                     </button>
                   </div>
                 </div>
+
                 <p
                   v-if="presupuesto.materiales.length === 0"
                   class="text-center text-slate-400 text-xs py-4 font-bold uppercase"
                 >
                   No se han agregado insumos internos.
                 </p>
+
+                <!-- NUEVO: Total de insumos -->
+                <div
+                  v-if="presupuesto.materiales.length > 0"
+                  class="flex justify-end pt-4 border-t border-slate-100 mt-4"
+                >
+                  <div class="text-right">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+                      >Costo Total Insumos:</span
+                    >
+                    <span class="text-lg font-black text-slate-900 ml-2"
+                      >Q {{ totalCostoMateriales.toFixed(2) }}</span
+                    >
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -610,6 +626,14 @@ const valorIpsp = computed(() => {
     (parseFloat(presupuesto.descuento) || 0)
   const baseSinIva = baseConIva / 1.05 // 5% de IVA
   return baseSinIva * 0.005
+})
+
+// NUEVO: Cálculo del costo total de insumos internos
+const totalCostoMateriales = computed(() => {
+  return presupuesto.materiales.reduce(
+    (acc, m) => acc + Number(m.cantidad) * Number(m.costo_unitario || 0),
+    0,
+  )
 })
 
 const formatDate = (dateStr) => {
