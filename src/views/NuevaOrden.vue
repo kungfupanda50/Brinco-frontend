@@ -439,10 +439,18 @@ const actualizarInfoProducto = (index) => {
 const generarOrden = async () => {
   try {
     procesando.value = true
+
+    // VALIDACIÓN: La fecha de entrega es obligatoria
+    if (!orden.value.fecha_entrega) {
+      alert('La fecha de entrega prometida es obligatoria.')
+      procesando.value = false
+      return
+    }
+
     const payload = {
       cliente_id: orden.value.cliente_id,
       presupuesto_id: orden.value.presupuesto_id,
-      fecha_entrega: orden.value.fecha_entrega || null, // <-- AGREGA || null
+      fecha_entrega: orden.value.fecha_entrega || null,
       subtotal: totalVentaMateriales.value,
       costo_materiales: totalCostoInternoMateriales.value,
       mano_obra: orden.value.mano_obra,
