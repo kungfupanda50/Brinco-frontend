@@ -250,7 +250,7 @@ const CardOrden = defineComponent({
     )
     const truncatedDesc = computed(() => {
       const desc = props.orden.notas_personalizacion || 'Sin especificaciones técnicas'
-      return desc.length > 80 ? desc.substring(0, 80) + '...' : desc
+      return desc.length > 180 ? desc.substring(0, 180) + '...' : desc
     })
 
     return () =>
