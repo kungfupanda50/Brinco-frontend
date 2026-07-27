@@ -327,6 +327,7 @@ const reporteForm = ref({
   usuarioId: '',
   cajaId: '',
   ordenId: '',
+  numeroCotizacion: '', // NUEVO
 })
 
 const abrirModalReporte = async () => {
@@ -360,6 +361,7 @@ const exportarExcel = () => {
     Tipo: p.tipo_movimiento,
     Categoría: p.categoria_pago,
     Método: p.metodo_pago || 'N/A',
+    Cotización: p.presupuesto_num || 'N/A', // NUEVO
     'Orden ID': p.orden_id || 'N/A',
     'Cliente / Descripción': p.cliente_nombre || p.descripcion_origen || 'N/A',
     Referencia: p.referencia_pago || '',
@@ -536,6 +538,11 @@ onMounted(cargarDatos)
                 <th
                   class="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest"
                 >
+                  Cotización
+                </th>
+                <th
+                  class="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest"
+                >
                   Referencia
                 </th>
                 <th
@@ -573,6 +580,9 @@ onMounted(cargarDatos)
                   <p class="font-bold text-slate-700 text-sm">{{ obtenerNombreMetodo(pago) }}</p>
                 </td>
                 <td class="px-6 py-4">
+                  <p class="font-bold text-[#06b6d4] text-sm">{{ pago.presupuesto_num || '-' }}</p>
+                </td>
+                <td class="px-6 py-4">
                   <p class="font-bold text-slate-700 text-sm">{{ pago.referencia_pago || '-' }}</p>
                   <p class="text-xs text-slate-400">{{ pago.nota_pago }}</p>
                 </td>
@@ -587,7 +597,7 @@ onMounted(cargarDatos)
               </tr>
               <tr v-if="pagosFiltrados.length === 0">
                 <td
-                  colspan="5"
+                  colspan="6"
                   class="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest"
                 >
                   No existen movimientos registrados.
@@ -976,6 +986,19 @@ onMounted(cargarDatos)
               type="number"
               class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
               placeholder="Ej: 18"
+            />
+          </div>
+          <!-- NUEVO FILTRO -->
+          <div>
+            <label
+              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+              >No. Cotización</label
+            >
+            <input
+              v-model="reporteForm.numeroCotizacion"
+              type="text"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none"
+              placeholder="Ej: BC26072601"
             />
           </div>
         </div>
