@@ -357,24 +357,29 @@
                     </div>
                   </div>
 
-                  <!-- Imágenes de Referencia de la Línea (CON DRAG & DROP) -->
+                  <!-- Imágenes de Referencia de la Línea (CON DRAG & DROP Y PASTE) -->
                   <div
-                    class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center transition-colors rounded-xl p-2 -m-2"
+                    class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center transition-colors rounded-xl p-2 -m-2 focus:outline-none"
                     @dragover.prevent="draggingLinea = index"
                     @dragleave.prevent="draggingLinea = null"
                     @drop.prevent="onDropLinea($event, linea)"
+                    @paste.prevent="handlePasteLinea($event, linea)"
+                    tabindex="0"
                     :class="
                       draggingLinea === index
                         ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]'
                         : ''
                     "
                   >
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
-                      >Referencias Visuales:</span
-                    >
-                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
-                      >NUEVO: Ahora con Copia y Pegar o solo arrastrar</span
-                    >
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                        >Referencias Visuales:</span
+                      >
+                      <span
+                        class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100"
+                        >✨ Arrastra, o selecciona y pega (Ctrl+V)</span
+                      >
+                    </div>
                     <div
                       v-for="(img, i) in linea.imagenes"
                       :key="i"
@@ -430,12 +435,23 @@
             <!-- 3. Imágenes Globales -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div
-                class="flex flex-wrap gap-4 transition-colors rounded-xl p-2 -m-2"
+                class="flex flex-wrap gap-4 transition-colors rounded-xl p-2 -m-2 focus:outline-none"
                 @dragover.prevent="draggingSueltas = true"
                 @dragleave.prevent="draggingSueltas = false"
                 @drop.prevent="onDropSueltas($event)"
+                @paste.prevent="handlePasteSueltas($event)"
+                tabindex="0"
                 :class="draggingSueltas ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]' : ''"
               >
+                <div class="flex flex-col gap-1 w-full mb-2">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                    >Galería de Referencias Adicionales:</span
+                  >
+                  <span
+                    class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100 w-fit"
+                    >✨ Arrastra, o selecciona y pega (Ctrl+V)</span
+                  >
+                </div>
                 <div
                   v-for="(img, i) in presupuesto.imagenes_sueltas"
                   :key="i"
@@ -838,6 +854,31 @@ const onDropSueltas = (event) => {
   draggingSueltas.value = false
   const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith('image/'))
   files.forEach((file) => subirImagenSuelta(file))
+}
+
+// NUEVAS FUNCIONES PARA COPIAR Y PEGAR (CTRL+V)
+const handlePasteLinea = (event, linea) => {
+  const items = (event.clipboardData || event.originalEvent.clipboardData).items
+  for (const item of items) {
+    if (item.type.indexOf('image') === 0) {
+      if (linea.imagenes.length >= 3) {
+        alert('Máximo 3 imágenes por línea.')
+        return
+      }
+      const file = item.getAsFile()
+      subirImagen(file, linea)
+    }
+  }
+}
+
+const handlePasteSueltas = (event) => {
+  const items = (event.clipboardData || event.originalEvent.clipboardData).items
+  for (const item of items) {
+    if (item.type.indexOf('image') === 0) {
+      const file = item.getAsFile()
+      subirImagenSuelta(file)
+    }
+  }
 }
 
 const iaCargando = ref(null)
