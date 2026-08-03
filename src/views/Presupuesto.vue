@@ -357,8 +357,18 @@
                     </div>
                   </div>
 
-                  <!-- Imágenes de Referencia de la Línea -->
-                  <div class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center">
+                  <!-- Imágenes de Referencia de la Línea (CON DRAG & DROP) -->
+                  <div
+                    class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center transition-colors rounded-xl p-2 -m-2"
+                    @dragover.prevent="draggingLinea = index"
+                    @dragleave.prevent="draggingLinea = null"
+                    @drop.prevent="onDropLinea($event, linea)"
+                    :class="
+                      draggingLinea === index
+                        ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]'
+                        : ''
+                    "
+                  >
                     <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
                       >Referencias Visuales:</span
                     >
@@ -403,7 +413,7 @@
                     >
                       <input
                         type="file"
-                        @change="subirImagen($event, linea)"
+                        @change="(e) => subirImagen(e.target.files[0], linea)"
                         class="hidden"
                         accept="image/*"
                       />
@@ -416,13 +426,13 @@
 
             <!-- 3. Imágenes Globales -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-              <div class="flex items-center gap-3 mb-6">
-                <span class="material-icons text-slate-400">collections</span>
-                <h3 class="font-black text-slate-800 text-xs uppercase tracking-widest">
-                  Galería de Referencias Adicionales
-                </h3>
-              </div>
-              <div class="flex flex-wrap gap-4">
+              <div
+                class="flex flex-wrap gap-4 transition-colors rounded-xl p-2 -m-2"
+                @dragover.prevent="draggingSueltas = true"
+                @dragleave.prevent="draggingSueltas = false"
+                @drop.prevent="onDropSueltas($event)"
+                :class="draggingSueltas ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]' : ''"
+              >
                 <div
                   v-for="(img, i) in presupuesto.imagenes_sueltas"
                   :key="i"
@@ -460,7 +470,7 @@
                 >
                   <input
                     type="file"
-                    @change="subirImagenSuelta($event)"
+                    @change="(e) => subirImagenSuelta(e.target.files[0])"
                     class="hidden"
                     accept="image/*"
                   />
@@ -774,11 +784,16 @@ const calcularTotales = () => {
     valorIpsp.value
 }
 
-const subirImagen = async (event, linea) => {
-  const file = event.target.files[0]
+// NUEVAS VARIABLES PARA DRAG & DROP
+const draggingLinea = ref(null)
+const draggingSueltas = ref(false)
+
+// FUNCIÓN ACTUALIZADA PARA SUBIR IMÁGENES DE LÍNEA
+const subirImagen = async (file, linea) => {
   if (!file) return
   const formData = new FormData()
   formData.append('imagen', file)
+
   try {
     const { data } = await api.post('/presupuestos/upload-img', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -789,11 +804,12 @@ const subirImagen = async (event, linea) => {
   }
 }
 
-const subirImagenSuelta = async (event) => {
-  const file = event.target.files[0]
+// FUNCIÓN ACTUALIZADA PARA SUBIR IMÁGENES SUELTAS
+const subirImagenSuelta = async (file) => {
   if (!file) return
   const formData = new FormData()
   formData.append('imagen', file)
+
   try {
     const { data } = await api.post('/presupuestos/upload-img', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -802,6 +818,23 @@ const subirImagenSuelta = async (event) => {
   } catch (err) {
     alert('Error al subir imagen suelta')
   }
+}
+
+// NUEVAS FUNCIONES PARA MANEJAR EL "SOLTAR"
+const onDropLinea = (event, linea) => {
+  draggingLinea.value = null
+  if (linea.imagenes.length >= 3) {
+    alert('Máximo 3 imágenes por línea.')
+    return
+  }
+  const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith('image/'))
+  files.forEach((file) => subirImagen(file, linea))
+}
+
+const onDropSueltas = (event) => {
+  draggingSueltas.value = false
+  const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith('image/'))
+  files.forEach((file) => subirImagenSuelta(file))
 }
 
 const iaCargando = ref(null)
