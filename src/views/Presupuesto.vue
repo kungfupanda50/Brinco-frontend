@@ -372,6 +372,9 @@
                     <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
                       >Referencias Visuales:</span
                     >
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                      >NUEVO: Ahora con Copia y Pegar o solo arrastrar</span
+                    >
                     <div
                       v-for="(img, i) in linea.imagenes"
                       :key="i"
@@ -382,7 +385,7 @@
                           : 'border-slate-200'
                       "
                     >
-                      <img :src="img.url" class="w-full h-full object-cover" />
+                      <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
 
                       <button
                         @click="img.grande = !img.grande"
@@ -441,7 +444,7 @@
                     img.grande ? 'border-[#06b6d4] ring-2 ring-[#06b6d4]/30' : 'border-slate-100'
                   "
                 >
-                  <img :src="img.url" class="w-full h-full object-cover" />
+                  <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
 
                   <button
                     @click="img.grande = !img.grande"
