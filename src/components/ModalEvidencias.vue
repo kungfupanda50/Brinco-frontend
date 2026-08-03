@@ -29,10 +29,12 @@
 
       <!-- CUERPO -->
       <div
-        class="flex-1 overflow-y-auto px-6 py-5 space-y-4 relative"
+        class="flex-1 overflow-y-auto px-6 py-5 space-y-4 relative focus:outline-none"
         @dragover.prevent="draggingOver = true"
         @dragleave.self="draggingOver = false"
         @drop.prevent="onDrop"
+        @paste.prevent="handlePaste"
+        tabindex="0"
       >
         <!-- OVERLAY DRAG & DROP -->
         <Transition name="fade">
@@ -42,10 +44,19 @@
           >
             <div class="text-center">
               <span class="material-icons text-6xl text-cyan-400">cloud_upload</span>
-              <p class="text-cyan-600 font-black text-xl mt-2">Suelta las fotos aquí</p>
+              <p class="text-cyan-600 font-black text-xl mt-2">Suelta las fotos o videos aquí</p>
             </div>
           </div>
         </Transition>
+
+        <!-- AVISO DE COPIAR Y PEGAR -->
+        <div v-if="!draggingOver" class="text-center mb-2">
+          <span
+            class="text-[9px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-3 py-1 rounded-full border border-cyan-100"
+          >
+            ✨ Arrastra tus archivos, o haz clic aquí y pega con (Ctrl+V)
+          </span>
+        </div>
 
         <!-- CARGANDO -->
         <div v-if="cargando" class="flex items-center justify-center py-20">
@@ -166,7 +177,9 @@
           >
             <span class="material-icons text-5xl block mb-2">photo_library</span>
             <p class="text-sm font-medium">No hay evidencias aún.</p>
-            <p class="text-xs mt-1">Usa el botón o <strong>arrastra fotos aquí</strong>.</p>
+            <p class="text-xs mt-1">
+              Usa el botón, <strong>arrastra fotos aquí</strong> o pega con Ctrl+V.
+            </p>
           </div>
         </template>
       </div>
@@ -276,6 +289,19 @@ const onDrop = (e) => {
   const archivos = Array.from(e.dataTransfer.files).filter(
     (f) => f.type.startsWith('image/') || f.type.startsWith('video/'),
   )
+  if (archivos.length) subirArchivos(archivos)
+}
+
+// NUEVA FUNCIÓN PARA COPIAR Y PEGAR (CTRL+V)
+const handlePaste = (event) => {
+  const items = (event.clipboardData || event.originalEvent.clipboardData).items
+  const archivos = []
+  for (const item of items) {
+    if (item.type.indexOf('image') === 0 || item.type.indexOf('video') === 0) {
+      const file = item.getAsFile()
+      if (file) archivos.push(file)
+    }
+  }
   if (archivos.length) subirArchivos(archivos)
 }
 
