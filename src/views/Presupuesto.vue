@@ -211,6 +211,34 @@
                   </div>
                 </div>
               </div>
+              <!-- CHECKBOX: Filtrar imágenes por insumos agregados -->
+              <div
+                v-if="presupuesto.materiales.length > 0"
+                class="mt-4 pt-4 border-t border-slate-100"
+              >
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      v-model="filtrarImagenesPorInsumos"
+                      class="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-md checked:bg-[#06b6d4] checked:border-[#06b6d4] transition-all"
+                    />
+                    <span
+                      class="material-icons absolute text-white text-xs scale-0 peer-checked:scale-100 transition-transform left-0.5"
+                      >check</span
+                    >
+                  </div>
+                  <div>
+                    <span
+                      class="text-xs font-bold text-slate-600 group-hover:text-slate-800 transition-colors"
+                      >Mostrar solo fotos de insumos agregados</span
+                    >
+                    <p class="text-[10px] text-slate-400">
+                      Al desmarcar se muestran todas las fotos del inventario
+                    </p>
+                  </div>
+                </label>
+              </div>
             </section>
 
             <section>
@@ -607,10 +635,12 @@
           <div>
             <h3 class="text-xl font-black text-slate-900">Imágenes del Inventario</h3>
             <p class="text-xs text-slate-400 mt-1">
-              Selecciona una imagen
+              <span v-if="filtrarImagenesPorInsumos">Solo insumos agregados</span>
+              <span v-else>Todos los productos</span>
+              · Para
               <span v-if="selectorDestino.tipo === 'linea'"
-                >para la línea {{ selectorDestino.index + 1 }}</span
-              ><span v-else>para la galería</span> ({{ slotsDisponibles }} disponibles)
+                >línea {{ selectorDestino.index + 1 }}</span
+              ><span v-else>galería</span> ({{ slotsDisponibles }} disponibles)
             </p>
           </div>
           <button
@@ -640,8 +670,13 @@
             class="flex flex-col items-center justify-center py-16 text-slate-400"
           >
             <span class="material-icons text-5xl mb-4">image_not_supported</span>
-            <p class="font-bold text-sm">No hay imágenes en el inventario</p>
-            <p class="text-xs mt-1">Agrega fotos a los productos desde el módulo de Inventario</p>
+            <p class="font-bold text-sm">No hay imágenes disponibles</p>
+            <p v-if="filtrarImagenesPorInsumos" class="text-xs mt-1">
+              Agrega insumos con fotos o desmarca el filtro
+            </p>
+            <p v-else class="text-xs mt-1">
+              Agrega fotos a los productos desde el módulo de Inventario
+            </p>
           </div>
           <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div v-for="producto in inventarioConImagenes" :key="producto.id" class="group/card">
@@ -656,12 +691,10 @@
                   class="w-full h-full object-cover"
                 />
                 <div
-                  class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"
+                  class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10"
                 >
-                  <div class="absolute bottom-0 left-0 right-0 p-3">
-                    <p class="text-white font-black text-xs truncate">{{ producto.nombre }}</p>
-                    <p class="text-white/60 text-[10px] font-mono">{{ producto.sku }}</p>
-                  </div>
+                  <p class="text-white font-black text-xs leading-tight">{{ producto.nombre }}</p>
+                  <p class="text-white/50 text-[10px] font-mono mt-0.5">{{ producto.sku }}</p>
                 </div>
                 <div
                   class="absolute top-2 right-2 w-8 h-8 bg-[#06b6d4] text-white rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all shadow-lg"
@@ -680,12 +713,10 @@
                   class="w-full h-full object-cover"
                 />
                 <div
-                  class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"
+                  class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10"
                 >
-                  <div class="absolute bottom-0 left-0 right-0 p-3">
-                    <p class="text-white font-black text-xs truncate">{{ producto.nombre }}</p>
-                    <p class="text-amber-300 text-[10px] font-bold">Foto 2</p>
-                  </div>
+                  <p class="text-white font-black text-xs leading-tight">{{ producto.nombre }}</p>
+                  <p class="text-amber-300 text-[10px] font-bold mt-0.5">Foto 2</p>
                 </div>
                 <div
                   class="absolute top-2 right-2 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all shadow-lg"
@@ -728,6 +759,7 @@ const busquedaInventario = ref('')
 const draggingLinea = ref(null)
 const draggingSueltas = ref(false)
 const iaCargando = ref(null)
+const filtrarImagenesPorInsumos = ref(true)
 
 const presupuesto = reactive({
   plantilla_id: null,
@@ -743,9 +775,19 @@ const presupuesto = reactive({
   materiales: [],
 })
 
+const idsProductosAgregados = computed(() => {
+  return presupuesto.materiales.map((m) => m.producto_id).filter((id) => id)
+})
+
 const inventarioConImagenes = computed(() => {
   const filtro = busquedaInventario.value.toLowerCase()
-  return inventario.value.filter((p) => {
+  let lista = inventario.value
+
+  if (filtrarImagenesPorInsumos.value && idsProductosAgregados.value.length > 0) {
+    lista = lista.filter((p) => idsProductosAgregados.value.includes(p.id))
+  }
+
+  return lista.filter((p) => {
     const tieneImagen = p.imagen1_url || p.imagen2_url
     const matchBusqueda =
       !filtro || p.nombre.toLowerCase().includes(filtro) || p.sku.toLowerCase().includes(filtro)
