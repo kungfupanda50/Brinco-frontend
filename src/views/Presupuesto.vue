@@ -8,7 +8,7 @@
       class="relative bg-[#f7f9fb] w-full max-w-6xl max-h-[95vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
     >
       <!-- Encabezado Estilo Brinco -->
-      <header class="p-8 bg-white border-b border-slate-100 flex justify-between items-center">
+      <header class="p-8 bg-white border-b border-slate-100 flex justify-between items-center flex-shrink-0">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span
@@ -82,10 +82,7 @@
                   id="actualizarFecha"
                   class="w-5 h-5 rounded border-slate-300 text-[#06b6d4] focus:ring-[#06b6d4] cursor-pointer"
                 />
-                <label
-                  for="actualizarFecha"
-                  class="text-sm font-bold text-slate-600 cursor-pointer"
-                >
+                <label for="actualizarFecha" class="text-sm font-bold text-slate-600 cursor-pointer">
                   Actualizar la fecha del documento a HOY antes de reimprimir
                 </label>
               </div>
@@ -355,86 +352,96 @@
                   <!-- ========================================== -->
                   <!-- IMÁGENES DE REFERENCIA DE LA LÍNEA -->
                   <!-- ========================================== -->
-                  <div
-                    class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center transition-colors rounded-xl p-2 -m-2 focus:outline-none"
-                    @dragover.prevent="draggingLinea = index"
-                    @dragleave.prevent="draggingLinea = null"
-                    @drop.prevent="onDropLinea($event, linea)"
-                    @paste.prevent="handlePasteLinea($event, linea)"
-                    tabindex="0"
-                    :class="
-                      draggingLinea === index
-                        ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]'
-                        : ''
-                    "
-                  >
-                    <div class="flex flex-col gap-1">
-                      <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
-                        >Referencias Visuales:</span
-                      >
-                      <span
-                        class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100"
-                        >✨ Arrastra, pega (Ctrl+V) o elige del inventario</span
-                      >
+                  <div class="mt-6 pt-6 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          Referencias Visuales ({{ linea.imagenes.length }}/3):
+                        </span>
+                        <span
+                          class="text-[8px] font-bold text-[#06b6d4] bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100"
+                          >✨ Arrastra, pega Ctrl+V o elige del inventario</span
+                        >
+                      </div>
                     </div>
 
-                    <!-- Imágenes existentes -->
                     <div
-                      v-for="(img, i) in linea.imagenes"
-                      :key="i"
-                      class="relative w-16 h-16 rounded-xl overflow-hidden border-2 shadow-sm group/img transition-all"
+                      class="flex flex-wrap gap-3 items-center p-3 rounded-xl transition-colors focus:outline-none bg-slate-50/50"
+                      @dragover.prevent="draggingLinea = index"
+                      @dragleave.prevent="draggingLinea = null"
+                      @drop.prevent="onDropLinea($event, linea)"
+                      @paste.prevent="handlePasteLinea($event, linea)"
+                      tabindex="0"
                       :class="
-                        img.grande
-                          ? 'border-[#06b6d4] ring-2 ring-[#06b6d4]/30'
-                          : 'border-slate-200'
+                        draggingLinea === index
+                          ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]'
+                          : ''
                       "
                     >
-                      <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
-                      <button
-                        @click="img.grande = !img.grande"
-                        class="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center transition-all"
+                      <div
+                        v-for="(img, i) in linea.imagenes"
+                        :key="'img-' + i"
+                        class="relative w-16 h-16 rounded-xl overflow-hidden border-2 shadow-sm group/img transition-all"
                         :class="
                           img.grande
-                            ? 'bg-[#06b6d4] text-white'
-                            : 'bg-slate-800/50 text-white opacity-0 group-hover/img:opacity-100'
+                            ? 'border-[#06b6d4] ring-2 ring-[#06b6d4]/30'
+                            : 'border-slate-200'
                         "
-                        title="Mostrar grande en PDF"
                       >
-                        <span class="material-icons" style="font-size: 12px">{{
-                          img.grande ? 'fullscreen_exit' : 'open_in_full'
-                        }}</span>
-                      </button>
+                        <img :src="img.url" class="w-full h-full object-contain bg-white" />
+                        <button
+                          @click="img.grande = !img.grande"
+                          class="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center transition-all"
+                          :class="
+                            img.grande
+                              ? 'bg-[#06b6d4] text-white'
+                              : 'bg-slate-800/60 text-white opacity-0 group-hover/img:opacity-100'
+                          "
+                          title="Mostrar grande en PDF"
+                        >
+                          <span class="material-icons" style="font-size: 12px">{{
+                            img.grande ? 'fullscreen_exit' : 'open_in_full'
+                          }}</span>
+                        </button>
+                        <button
+                          @click="linea.imagenes.splice(i, 1)"
+                          class="absolute top-0 left-0 w-5 h-5 bg-red-500 text-white opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-br-lg"
+                        >
+                          <span class="material-icons" style="font-size: 12px">close</span>
+                        </button>
+                      </div>
+
                       <button
-                        @click="linea.imagenes.splice(i, 1)"
-                        class="absolute top-0 left-0 w-5 h-5 bg-red-500/80 text-white opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-br"
+                        v-if="linea.imagenes.length < 3"
+                        @click="abrirSelectorInventario('linea', index)"
+                        class="h-16 px-4 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 flex items-center gap-2 text-amber-500 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-100 cursor-pointer transition-all"
+                        title="Elegir imagen del inventario"
                       >
-                        <span class="material-icons" style="font-size: 12px">close</span>
+                        <span class="material-icons text-xl">inventory_2</span>
+                        <span class="text-[10px] font-black uppercase">Inventario</span>
                       </button>
+
+                      <label
+                        v-if="linea.imagenes.length < 3"
+                        class="h-16 px-4 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center gap-2 text-slate-400 hover:border-[#06b6d4] hover:text-[#06b6d4] hover:bg-cyan-50 cursor-pointer transition-all"
+                      >
+                        <input
+                          type="file"
+                          @change="(e) => subirImagen(e.target.files[0], linea)"
+                          class="hidden"
+                          accept="image/*"
+                        />
+                        <span class="material-icons text-xl">add_a_photo</span>
+                        <span class="text-[10px] font-black uppercase">Subir</span>
+                      </label>
+
+                      <span
+                        v-if="linea.imagenes.length >= 3"
+                        class="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100"
+                      >
+                        ✓ Máximo alcanzado
+                      </span>
                     </div>
-
-                    <!-- Botón: Elegir del Inventario -->
-                    <button
-                      v-if="linea.imagenes.length < 3"
-                      @click="abrirSelectorInventario('linea', index)"
-                      class="w-16 h-16 rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50 flex flex-col items-center justify-center text-amber-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer transition-all"
-                      title="Elegir imagen del inventario"
-                    >
-                      <span class="material-icons text-xl">inventory</span>
-                    </button>
-
-                    <!-- Botón: Subir desde PC/Portapapeles -->
-                    <label
-                      v-if="linea.imagenes.length < 3"
-                      class="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-[#06b6d4] hover:text-[#06b6d4] cursor-pointer transition-all"
-                    >
-                      <input
-                        type="file"
-                        @change="(e) => subirImagen(e.target.files[0], linea)"
-                        class="hidden"
-                        accept="image/*"
-                      />
-                      <span class="material-icons text-xl">add_a_photo</span>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -442,42 +449,44 @@
 
             <!-- 3. Imágenes Globales -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+              <div class="flex flex-col gap-1 mb-4">
+                <span
+                  class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                  >Galería de Referencias Adicionales:</span
+                >
+                <span
+                  class="text-[8px] font-bold text-[#06b6d4] bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100 w-fit"
+                  >✨ Arrastra, pega Ctrl+V o elige del inventario</span
+                >
+              </div>
+
               <div
-                class="flex flex-wrap gap-4 transition-colors rounded-xl p-2 -m-2 focus:outline-none"
+                class="flex flex-wrap gap-4 items-center p-3 rounded-xl transition-colors focus:outline-none bg-slate-50/50"
                 @dragover.prevent="draggingSueltas = true"
                 @dragleave.prevent="draggingSueltas = false"
                 @drop.prevent="onDropSueltas($event)"
                 @paste.prevent="handlePasteSueltas($event)"
                 tabindex="0"
-                :class="draggingSueltas ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]' : ''"
+                :class="
+                  draggingSueltas ? 'bg-cyan-50 border-2 border-dashed border-[#06b6d4]' : ''
+                "
               >
-                <div class="flex flex-col gap-1 w-full mb-2">
-                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
-                    >Galería de Referencias Adicionales:</span
-                  >
-                  <span
-                    class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100 w-fit"
-                    >✨ Arrastra, pega (Ctrl+V) o elige del inventario</span
-                  >
-                </div>
-
-                <!-- Imágenes existentes -->
                 <div
                   v-for="(img, i) in presupuesto.imagenes_sueltas"
-                  :key="i"
+                  :key="'suelta-' + i"
                   class="relative w-24 h-24 rounded-2xl overflow-hidden border-2 shadow-sm group transition-all"
                   :class="
                     img.grande ? 'border-[#06b6d4] ring-2 ring-[#06b6d4]/30' : 'border-slate-100'
                   "
                 >
-                  <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
+                  <img :src="img.url" class="w-full h-full object-contain bg-white" />
                   <button
                     @click="img.grande = !img.grande"
                     class="absolute bottom-0 right-0 w-6 h-6 flex items-center justify-center transition-all"
                     :class="
                       img.grande
                         ? 'bg-[#06b6d4] text-white'
-                        : 'bg-slate-800/50 text-white opacity-0 group-hover:opacity-100'
+                        : 'bg-slate-800/60 text-white opacity-0 group-hover:opacity-100'
                     "
                     title="Mostrar grande en PDF"
                   >
@@ -493,19 +502,17 @@
                   </button>
                 </div>
 
-                <!-- Botón: Elegir del Inventario -->
                 <button
                   @click="abrirSelectorInventario('sueltas', null)"
-                  class="w-24 h-24 rounded-2xl border-4 border-dashed border-amber-100 bg-amber-50/50 flex flex-col items-center justify-center text-amber-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer transition-all"
+                  class="h-24 px-5 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 flex flex-col items-center justify-center gap-1 text-amber-500 hover:border-amber-500 hover:text-amber-700 hover:bg-amber-100 cursor-pointer transition-all"
                   title="Elegir imagen del inventario"
                 >
-                  <span class="material-icons text-2xl">inventory</span>
-                  <span class="text-[8px] font-black uppercase mt-1">Inventario</span>
+                  <span class="material-icons text-2xl">inventory_2</span>
+                  <span class="text-[9px] font-black uppercase">Inventario</span>
                 </button>
 
-                <!-- Botón: Subir desde PC -->
                 <label
-                  class="w-24 h-24 rounded-2xl border-4 border-dashed border-slate-50 bg-slate-50 flex flex-col items-center justify-center text-slate-300 hover:bg-white hover:border-cyan-100 hover:text-[#06b6d4] cursor-pointer transition-all"
+                  class="h-24 px-5 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-[#06b6d4] hover:text-[#06b6d4] hover:bg-cyan-50 cursor-pointer transition-all"
                 >
                   <input
                     type="file"
@@ -514,7 +521,7 @@
                     accept="image/*"
                   />
                   <span class="material-icons text-2xl">add</span>
-                  <span class="text-[8px] font-black uppercase mt-1">Cargar</span>
+                  <span class="text-[9px] font-black uppercase">Subir</span>
                 </label>
               </div>
             </section>
@@ -522,7 +529,8 @@
             <!-- Texto Adicional -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div class="flex flex-col gap-2">
-                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2"
+                <label
+                  class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2"
                   >Texto Adicional para el PDF (Máx 120)</label
                 >
                 <textarea
@@ -539,7 +547,7 @@
 
       <!-- Footer de Liquidación y Acciones -->
       <footer
-        class="p-6 bg-white border-t border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6"
+        class="p-6 bg-white border-t border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6 flex-shrink-0"
       >
         <div class="flex flex-wrap gap-4 w-full lg:w-auto items-end justify-center">
           <div class="flex flex-col gap-1.5 w-32">
@@ -641,7 +649,6 @@
       <div
         class="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
       >
-        <!-- Header del selector -->
         <header
           class="p-6 bg-white border-b border-slate-100 flex justify-between items-center flex-shrink-0"
         >
@@ -664,13 +671,13 @@
           </button>
         </header>
 
-        <!-- Buscador -->
         <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex-shrink-0">
           <div class="relative">
             <span
               class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
               >search</span
             >
+            </span>
             <input
               v-model="busquedaInventario"
               type="text"
@@ -680,7 +687,6 @@
           </div>
         </div>
 
-        <!-- Grid de imágenes -->
         <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
           <div
             v-if="inventarioConImagenes.length === 0"
@@ -692,8 +698,11 @@
           </div>
 
           <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div v-for="producto in inventarioConImagenes" :key="producto.id" class="group/card">
-              <!-- Producto con imagen 1 -->
+            <div
+              v-for="producto in inventarioConImagenes"
+              :key="producto.id"
+              class="group/card"
+            >
               <div
                 v-if="producto.imagen1_url"
                 @click="seleccionarImagenInventario(producto.imagen1_url)"
@@ -719,7 +728,6 @@
                 </div>
               </div>
 
-              <!-- Producto con imagen 2 (si tiene) -->
               <div
                 v-if="producto.imagen2_url"
                 @click="seleccionarImagenInventario(producto.imagen2_url)"
@@ -796,29 +804,27 @@ const presupuesto = reactive({
   materiales: [],
 })
 
-// Computed: Inventario filtrado que tenga imágenes
 const inventarioConImagenes = computed(() => {
   const filtro = busquedaInventario.value.toLowerCase()
   return inventario.value.filter((p) => {
     const tieneImagen = p.imagen1_url || p.imagen2_url
     const matchBusqueda =
-      !filtro || p.nombre.toLowerCase().includes(filtro) || p.sku.toLowerCase().includes(filtro)
+      !filtro ||
+      p.nombre.toLowerCase().includes(filtro) ||
+      p.sku.toLowerCase().includes(filtro)
     return tieneImagen && matchBusqueda
   })
 })
 
-// Computed: Slots disponibles según destino
 const slotsDisponibles = computed(() => {
   if (selectorDestino.value.tipo === 'linea') {
     const linea = presupuesto.lineas[selectorDestino.value.index]
     return linea ? 3 - linea.imagenes.length : 0
   }
-  return '∞' // Ilimitado para sueltas
+  return '∞'
 })
 
-// Abrir selector de inventario
 const abrirSelectorInventario = (tipo, index) => {
-  // Verificar si hay espacio
   if (tipo === 'linea') {
     const linea = presupuesto.lineas[index]
     if (linea.imagenes.length >= 3) {
@@ -826,13 +832,11 @@ const abrirSelectorInventario = (tipo, index) => {
       return
     }
   }
-
   selectorDestino.value = { tipo, index }
   busquedaInventario.value = ''
   selectorInventarioAbierto.value = true
 }
 
-// Seleccionar imagen del inventario
 const seleccionarImagenInventario = (url) => {
   if (selectorDestino.value.tipo === 'linea') {
     const linea = presupuesto.lineas[selectorDestino.value.index]
@@ -846,7 +850,7 @@ const seleccionarImagenInventario = (url) => {
 }
 
 // ==========================================
-// RESTO DE LÓGICA EXISTENTE
+// RESTO DE LÓGICA
 // ==========================================
 
 const estructuraActual = computed(() => {
@@ -912,7 +916,6 @@ onMounted(async () => {
     const def = plantillas.value.find((p) => p.is_default === 1)
     presupuesto.plantilla_id = def ? def.id : plantillas.value[0]?.id || null
 
-    // Si es edición, cargar datos de la cotización
     if (props.presupuestoId) {
       const { data } = await api.get(`/presupuestos/${props.presupuestoId}/full`)
       cotizacionInfo.value.numero = data.numero_cotizacion
@@ -974,12 +977,18 @@ const eliminarLinea = (index) => {
 }
 
 const calcularLinea = (linea) => {
-  linea.total_linea = (parseFloat(linea.cantidad) || 0) * (parseFloat(linea.precio_unitario) || 0)
+  linea.total_linea =
+    (parseFloat(linea.cantidad) || 0) * (parseFloat(linea.precio_unitario) || 0)
   calcularTotales()
 }
 
 const agregarMaterial = () => {
-  presupuesto.materiales.push({ producto_id: '', cantidad: 1, precio_venta: 0, costo_unitario: 0 })
+  presupuesto.materiales.push({
+    producto_id: '',
+    cantidad: 1,
+    precio_venta: 0,
+    costo_unitario: 0,
+  })
 }
 
 const removerMaterial = (index) => {
@@ -990,13 +999,18 @@ const actualizarInfoMaterial = (index) => {
   const item = presupuesto.materiales[index]
   const prod = inventario.value.find((p) => p.id === item.producto_id)
   if (prod) {
-    item.precio_venta = Number(prod.precio_venta_sugerido || prod.precio_compra_referencia * 1.4)
+    item.precio_venta = Number(
+      prod.precio_venta_sugerido || prod.precio_compra_referencia * 1.4,
+    )
     item.costo_unitario = Number(prod.precio_compra_referencia)
   }
 }
 
 const calcularTotales = () => {
-  let sub = presupuesto.lineas.reduce((acc, l) => acc + (parseFloat(l.total_linea) || 0), 0)
+  let sub = presupuesto.lineas.reduce(
+    (acc, l) => acc + (parseFloat(l.total_linea) || 0),
+    0,
+  )
   presupuesto.subtotal = sub
   presupuesto.total =
     sub +
