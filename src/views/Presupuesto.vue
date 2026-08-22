@@ -15,7 +15,6 @@
               class="bg-cyan-50 text-[#06b6d4] px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-cyan-100"
               >Módulo de Ventas</span
             >
-            <!-- NUEVO: Badge de número de cotización si está editando -->
             <span
               v-if="cotizacionInfo.numero"
               class="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
@@ -23,12 +22,10 @@
               Editando: {{ cotizacionInfo.numero }}
             </span>
           </div>
-          <!-- NUEVO: Título cambia si es edición o nueva -->
           <h2 class="text-3xl font-black text-slate-900">
             {{ cotizacionInfo.numero ? 'Editar Cotización' : 'Generar Cotización' }}
           </h2>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-            <!-- NUEVO: Muestra el cliente si está editando -->
             {{
               cotizacionInfo.cliente
                 ? cotizacionInfo.cliente
@@ -57,7 +54,7 @@
         </div>
 
         <div v-else class="space-y-8">
-          <!-- NUEVO: SELECTOR DE HISTORIAL -->
+          <!-- SELECTOR DE HISTORIAL -->
           <section class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
             <div class="flex flex-col gap-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
@@ -75,7 +72,6 @@
                 </option>
               </select>
 
-              <!-- CHECKBOX ACTUALIZAR FECHA -->
               <div
                 v-if="presupuestoSeleccionado"
                 class="flex items-center gap-3 mt-4 p-4 bg-cyan-50 rounded-xl border border-cyan-100"
@@ -96,7 +92,7 @@
             </div>
           </section>
 
-          <!-- SECCIÓN DE CREACIÓN (Se oculta si se elige reimprimir) -->
+          <!-- SECCIÓN DE CREACIÓN -->
           <div v-if="!presupuestoSeleccionado" class="space-y-10">
             <!-- 1. Configuración Global -->
             <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -143,7 +139,7 @@
               </div>
             </section>
 
-            <!-- INSUMOS Y MATERIALES (USO INTERNO) - VA ARRIBA -->
+            <!-- INSUMOS Y MATERIALES -->
             <section class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
               <div class="flex items-center gap-3 mb-6">
                 <span class="material-icons text-slate-400">inventory_2</span>
@@ -215,7 +211,6 @@
                   No se han agregado insumos internos.
                 </p>
 
-                <!-- Total de insumos -->
                 <div
                   v-if="presupuesto.materiales.length > 0"
                   class="flex justify-end pt-4 border-t border-slate-100 mt-4"
@@ -287,7 +282,7 @@
                       </button>
                     </div>
 
-                    <!-- Campos Técnicos (Medidas si aplica) -->
+                    <!-- Campos Técnicos -->
                     <div class="lg:col-span-3 space-y-4">
                       <div class="flex flex-col gap-1.5">
                         <label class="text-[9px] font-black text-slate-400 uppercase">Color</label>
@@ -357,7 +352,9 @@
                     </div>
                   </div>
 
-                  <!-- Imágenes de Referencia de la Línea (CON DRAG & DROP Y PASTE) -->
+                  <!-- ========================================== -->
+                  <!-- IMÁGENES DE REFERENCIA DE LA LÍNEA -->
+                  <!-- ========================================== -->
                   <div
                     class="mt-6 pt-6 border-t border-slate-50 flex flex-wrap gap-4 items-center transition-colors rounded-xl p-2 -m-2 focus:outline-none"
                     @dragover.prevent="draggingLinea = index"
@@ -377,9 +374,11 @@
                       >
                       <span
                         class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100"
-                        >✨ Arrastra, o selecciona y pega (Ctrl+V)</span
+                        >✨ Arrastra, pega (Ctrl+V) o elige del inventario</span
                       >
                     </div>
+
+                    <!-- Imágenes existentes -->
                     <div
                       v-for="(img, i) in linea.imagenes"
                       :key="i"
@@ -391,7 +390,6 @@
                       "
                     >
                       <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
-
                       <button
                         @click="img.grande = !img.grande"
                         class="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center transition-all"
@@ -406,7 +404,6 @@
                           img.grande ? 'fullscreen_exit' : 'open_in_full'
                         }}</span>
                       </button>
-
                       <button
                         @click="linea.imagenes.splice(i, 1)"
                         class="absolute top-0 left-0 w-5 h-5 bg-red-500/80 text-white opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-br"
@@ -415,6 +412,17 @@
                       </button>
                     </div>
 
+                    <!-- Botón: Elegir del Inventario -->
+                    <button
+                      v-if="linea.imagenes.length < 3"
+                      @click="abrirSelectorInventario('linea', index)"
+                      class="w-16 h-16 rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50 flex flex-col items-center justify-center text-amber-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer transition-all"
+                      title="Elegir imagen del inventario"
+                    >
+                      <span class="material-icons text-xl">inventory</span>
+                    </button>
+
+                    <!-- Botón: Subir desde PC/Portapapeles -->
                     <label
                       v-if="linea.imagenes.length < 3"
                       class="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-[#06b6d4] hover:text-[#06b6d4] cursor-pointer transition-all"
@@ -449,9 +457,11 @@
                   >
                   <span
                     class="text-[8px] font-bold text-[#06b6d4] uppercase tracking-widest bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-100 w-fit"
-                    >✨ Arrastra, o selecciona y pega (Ctrl+V)</span
+                    >✨ Arrastra, pega (Ctrl+V) o elige del inventario</span
                   >
                 </div>
+
+                <!-- Imágenes existentes -->
                 <div
                   v-for="(img, i) in presupuesto.imagenes_sueltas"
                   :key="i"
@@ -461,7 +471,6 @@
                   "
                 >
                   <img :src="img.url" class="w-full h-full object-contain bg-slate-100" />
-
                   <button
                     @click="img.grande = !img.grande"
                     class="absolute bottom-0 right-0 w-6 h-6 flex items-center justify-center transition-all"
@@ -476,7 +485,6 @@
                       img.grande ? 'fullscreen_exit' : 'open_in_full'
                     }}</span>
                   </button>
-
                   <button
                     @click="presupuesto.imagenes_sueltas.splice(i, 1)"
                     class="absolute top-1 right-1 w-6 h-6 bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -484,6 +492,18 @@
                     <span class="material-icons text-xs">close</span>
                   </button>
                 </div>
+
+                <!-- Botón: Elegir del Inventario -->
+                <button
+                  @click="abrirSelectorInventario('sueltas', null)"
+                  class="w-24 h-24 rounded-2xl border-4 border-dashed border-amber-100 bg-amber-50/50 flex flex-col items-center justify-center text-amber-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer transition-all"
+                  title="Elegir imagen del inventario"
+                >
+                  <span class="material-icons text-2xl">inventory</span>
+                  <span class="text-[8px] font-black uppercase mt-1">Inventario</span>
+                </button>
+
+                <!-- Botón: Subir desde PC -->
                 <label
                   class="w-24 h-24 rounded-2xl border-4 border-dashed border-slate-50 bg-slate-50 flex flex-col items-center justify-center text-slate-300 hover:bg-white hover:border-cyan-100 hover:text-[#06b6d4] cursor-pointer transition-all"
                 >
@@ -605,6 +625,130 @@
         </div>
       </footer>
     </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL SELECTOR DE IMÁGENES DEL INVENTARIO -->
+    <!-- ========================================== -->
+    <div
+      v-if="selectorInventarioAbierto"
+      class="fixed inset-0 z-[1100] flex items-center justify-center p-4"
+    >
+      <div
+        @click="selectorInventarioAbierto = false"
+        class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
+      ></div>
+
+      <div
+        class="relative bg-white w-full max-w-4xl max-h-[85vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
+      >
+        <!-- Header del selector -->
+        <header
+          class="p-6 bg-white border-b border-slate-100 flex justify-between items-center flex-shrink-0"
+        >
+          <div>
+            <h3 class="text-xl font-black text-slate-900">Imágenes del Inventario</h3>
+            <p class="text-xs text-slate-400 mt-1">
+              Selecciona una imagen para agregarla
+              <span v-if="selectorDestino.tipo === 'linea'">
+                a la línea {{ selectorDestino.index + 1 }}
+              </span>
+              <span v-else> a la galería adicional</span>
+              ({{ slotsDisponibles }} disponibles)
+            </p>
+          </div>
+          <button
+            @click="selectorInventarioAbierto = false"
+            class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center"
+          >
+            <span class="material-icons">close</span>
+          </button>
+        </header>
+
+        <!-- Buscador -->
+        <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex-shrink-0">
+          <div class="relative">
+            <span
+              class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+              >search</span
+            >
+            <input
+              v-model="busquedaInventario"
+              type="text"
+              placeholder="Buscar producto por nombre o SKU..."
+              class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none text-sm focus:ring-4 focus:ring-[#06b6d4]/10 font-medium transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Grid de imágenes -->
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <div
+            v-if="inventarioConImagenes.length === 0"
+            class="flex flex-col items-center justify-center py-16 text-slate-400"
+          >
+            <span class="material-icons text-5xl mb-4">image_not_supported</span>
+            <p class="font-bold text-sm">No hay imágenes en el inventario</p>
+            <p class="text-xs mt-1">Agrega fotos a los productos desde el módulo de Inventario</p>
+          </div>
+
+          <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div v-for="producto in inventarioConImagenes" :key="producto.id" class="group/card">
+              <!-- Producto con imagen 1 -->
+              <div
+                v-if="producto.imagen1_url"
+                @click="seleccionarImagenInventario(producto.imagen1_url)"
+                class="relative aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-[#06b6d4] hover:shadow-lg transition-all"
+              >
+                <img
+                  :src="producto.imagen1_url"
+                  :alt="producto.nombre"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"
+                >
+                  <div class="absolute bottom-0 left-0 right-0 p-3">
+                    <p class="text-white font-black text-xs truncate">{{ producto.nombre }}</p>
+                    <p class="text-white/60 text-[10px] font-mono">{{ producto.sku }}</p>
+                  </div>
+                </div>
+                <div
+                  class="absolute top-2 right-2 w-8 h-8 bg-[#06b6d4] text-white rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all shadow-lg"
+                >
+                  <span class="material-icons text-sm">add</span>
+                </div>
+              </div>
+
+              <!-- Producto con imagen 2 (si tiene) -->
+              <div
+                v-if="producto.imagen2_url"
+                @click="seleccionarImagenInventario(producto.imagen2_url)"
+                class="relative aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 cursor-pointer hover:border-amber-400 hover:shadow-lg transition-all mt-3"
+              >
+                <img
+                  :src="producto.imagen2_url"
+                  :alt="producto.nombre + ' (2)'"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"
+                >
+                  <div class="absolute bottom-0 left-0 right-0 p-3">
+                    <p class="text-white font-black text-xs truncate">{{ producto.nombre }}</p>
+                    <p class="text-amber-300 text-[10px] font-bold">Foto 2</p>
+                  </div>
+                </div>
+                <div
+                  class="absolute top-2 right-2 w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-all shadow-lg"
+                >
+                  <span class="material-icons text-sm">add</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -615,7 +759,7 @@ import api from '../api/axios'
 const props = defineProps({
   clienteId: { type: Number, required: true },
   ordenId: { type: Number, default: null },
-  presupuestoId: { type: Number, default: null }, // NUEVO: Para editar
+  presupuestoId: { type: Number, default: null },
 })
 const emit = defineEmits(['cerrar'])
 
@@ -630,6 +774,14 @@ const presupuestoSeleccionado = ref(null)
 const actualizarFecha = ref(false)
 const aplicaIpsp = ref(false)
 const cotizacionInfo = ref({ numero: null, cliente: null })
+
+// ==========================================
+// SELECTOR DE IMÁGENES DEL INVENTARIO
+// ==========================================
+const selectorInventarioAbierto = ref(false)
+const selectorDestino = ref({ tipo: 'linea', index: null })
+const busquedaInventario = ref('')
+
 const presupuesto = reactive({
   plantilla_id: null,
   moneda_id: 1,
@@ -644,6 +796,59 @@ const presupuesto = reactive({
   materiales: [],
 })
 
+// Computed: Inventario filtrado que tenga imágenes
+const inventarioConImagenes = computed(() => {
+  const filtro = busquedaInventario.value.toLowerCase()
+  return inventario.value.filter((p) => {
+    const tieneImagen = p.imagen1_url || p.imagen2_url
+    const matchBusqueda =
+      !filtro || p.nombre.toLowerCase().includes(filtro) || p.sku.toLowerCase().includes(filtro)
+    return tieneImagen && matchBusqueda
+  })
+})
+
+// Computed: Slots disponibles según destino
+const slotsDisponibles = computed(() => {
+  if (selectorDestino.value.tipo === 'linea') {
+    const linea = presupuesto.lineas[selectorDestino.value.index]
+    return linea ? 3 - linea.imagenes.length : 0
+  }
+  return '∞' // Ilimitado para sueltas
+})
+
+// Abrir selector de inventario
+const abrirSelectorInventario = (tipo, index) => {
+  // Verificar si hay espacio
+  if (tipo === 'linea') {
+    const linea = presupuesto.lineas[index]
+    if (linea.imagenes.length >= 3) {
+      alert('Máximo 3 imágenes por línea.')
+      return
+    }
+  }
+
+  selectorDestino.value = { tipo, index }
+  busquedaInventario.value = ''
+  selectorInventarioAbierto.value = true
+}
+
+// Seleccionar imagen del inventario
+const seleccionarImagenInventario = (url) => {
+  if (selectorDestino.value.tipo === 'linea') {
+    const linea = presupuesto.lineas[selectorDestino.value.index]
+    if (linea && linea.imagenes.length < 3) {
+      linea.imagenes.push({ url, grande: false })
+    }
+  } else {
+    presupuesto.imagenes_sueltas.push({ url, grande: false })
+  }
+  selectorInventarioAbierto.value = false
+}
+
+// ==========================================
+// RESTO DE LÓGICA EXISTENTE
+// ==========================================
+
 const estructuraActual = computed(() => {
   const p = plantillas.value.find((p) => p.id === presupuesto.plantilla_id)
   return p?.tipo_estructura || 'simple'
@@ -654,7 +859,6 @@ const monedaSimbolo = computed(() => {
   return m ? m.simbolo : 'Q'
 })
 
-// Cálculo del Timbre de Prensa (0.5% sobre base sin IVA del 5%)
 const valorIpsp = computed(() => {
   if (!aplicaIpsp.value) return 0
   const baseConIva =
@@ -665,7 +869,6 @@ const valorIpsp = computed(() => {
   return baseSinIva * 0.005
 })
 
-// Cálculo del costo total de insumos internos
 const totalCostoMateriales = computed(() => {
   return presupuesto.materiales.reduce(
     (acc, m) => acc + Number(m.cantidad) * Number(m.costo_unitario || 0),
@@ -795,7 +998,6 @@ const actualizarInfoMaterial = (index) => {
 const calcularTotales = () => {
   let sub = presupuesto.lineas.reduce((acc, l) => acc + (parseFloat(l.total_linea) || 0), 0)
   presupuesto.subtotal = sub
-  // Total = Subtotal + Envío - Descuento + IPSP
   presupuesto.total =
     sub +
     (parseFloat(presupuesto.costo_envio) || 0) -
@@ -803,11 +1005,10 @@ const calcularTotales = () => {
     valorIpsp.value
 }
 
-// NUEVAS VARIABLES PARA DRAG & DROP
+// DRAG & DROP
 const draggingLinea = ref(null)
 const draggingSueltas = ref(false)
 
-// FUNCIÓN ACTUALIZADA PARA SUBIR IMÁGENES DE LÍNEA
 const subirImagen = async (file, linea) => {
   if (!file) return
   const formData = new FormData()
@@ -823,7 +1024,6 @@ const subirImagen = async (file, linea) => {
   }
 }
 
-// FUNCIÓN ACTUALIZADA PARA SUBIR IMÁGENES SUELTAS
 const subirImagenSuelta = async (file) => {
   if (!file) return
   const formData = new FormData()
@@ -839,7 +1039,6 @@ const subirImagenSuelta = async (file) => {
   }
 }
 
-// NUEVAS FUNCIONES PARA MANEJAR EL "SOLTAR"
 const onDropLinea = (event, linea) => {
   draggingLinea.value = null
   if (linea.imagenes.length >= 3) {
@@ -856,7 +1055,6 @@ const onDropSueltas = (event) => {
   files.forEach((file) => subirImagenSuelta(file))
 }
 
-// NUEVAS FUNCIONES PARA COPIAR Y PEGAR (CTRL+V)
 const handlePasteLinea = (event, linea) => {
   const items = (event.clipboardData || event.originalEvent.clipboardData).items
   for (const item of items) {
@@ -936,7 +1134,6 @@ const guardarPresupuesto = async () => {
   guardando.value = true
   calcularTotales()
   try {
-    // Si es edición, hacemos PUT, si no, POST
     const url = props.presupuestoId ? `/presupuestos/${props.presupuestoId}` : '/presupuestos'
     const method = props.presupuestoId ? 'put' : 'post'
 
@@ -992,7 +1189,6 @@ const guardarPresupuesto = async () => {
   background: transparent;
 }
 
-/* Animaciones de entrada */
 .animate-in {
   animation-duration: 0.3s;
   animation-fill-mode: both;
