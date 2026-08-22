@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-4xl font-black text-slate-900 mb-2">Inventario de Insumos</h1>
         <p class="text-slate-500 font-medium">
-          Gestiona existencias y precios de venta para presupuestación.
+          Gestiona existencias, fotos y precios de venta para presupuestación.
         </p>
       </div>
       <div class="flex gap-3">
@@ -108,6 +108,7 @@
               class="bg-slate-50/50 text-[10px] text-slate-400 uppercase font-black tracking-widest border-b border-slate-100"
             >
               <th class="px-8 py-5">Producto / SKU</th>
+              <th class="px-6 py-5 text-center">Fotos</th>
               <th class="px-8 py-5 text-center">Categoría</th>
               <th class="px-8 py-5">Nivel de Stock</th>
               <th class="px-8 py-5">Precio Costo</th>
@@ -123,8 +124,20 @@
             >
               <td class="px-8 py-6">
                 <div class="flex items-center gap-4">
+                  <!-- Miniatura o Icono -->
                   <div
-                    class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-cyan-50 group-hover:text-[#06b6d4] transition-colors"
+                    v-if="item.imagen1_url"
+                    class="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-slate-100 group-hover:border-cyan-200 transition-colors"
+                  >
+                    <img
+                      :src="item.imagen1_url"
+                      :alt="item.nombre"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div
+                    v-else
+                    class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-cyan-50 group-hover:text-[#06b6d4] transition-colors flex-shrink-0"
                   >
                     <span class="material-icons text-2xl">inventory_2</span>
                   </div>
@@ -135,7 +148,38 @@
                     <p class="text-[11px] text-slate-400 font-mono mt-1 tracking-wider">
                       {{ item.sku }}
                     </p>
+                    <p
+                      v-if="item.descripcion"
+                      class="text-[10px] text-slate-400 mt-1 line-clamp-1 max-w-[220px]"
+                    >
+                      {{ item.descripcion }}
+                    </p>
                   </div>
+                </div>
+              </td>
+              <!-- Columna de Fotos -->
+              <td class="px-6 py-6">
+                <div class="flex justify-center gap-2">
+                  <div
+                    v-if="item.imagen1_url"
+                    class="w-9 h-9 rounded-xl overflow-hidden border border-slate-100 cursor-pointer hover:border-cyan-300 hover:shadow-md transition-all"
+                    @click="abrirVisorImagenes(item)"
+                  >
+                    <img :src="item.imagen1_url" class="w-full h-full object-cover" />
+                  </div>
+                  <div
+                    v-if="item.imagen2_url"
+                    class="w-9 h-9 rounded-xl overflow-hidden border border-slate-100 cursor-pointer hover:border-cyan-300 hover:shadow-md transition-all"
+                    @click="abrirVisorImagenes(item)"
+                  >
+                    <img :src="item.imagen2_url" class="w-full h-full object-cover" />
+                  </div>
+                  <span
+                    v-if="!item.imagen1_url && !item.imagen2_url"
+                    class="text-[10px] text-slate-300 font-bold"
+                  >
+                    —
+                  </span>
                 </div>
               </td>
               <td class="px-8 py-6 text-center">
@@ -210,7 +254,7 @@
             </tr>
             <tr v-if="productosFiltrados.length === 0">
               <td
-                colspan="6"
+                colspan="7"
                 class="py-20 text-center text-slate-400 font-bold uppercase text-xs tracking-widest"
               >
                 No se encontraron insumos que coincidan con los filtros.
@@ -248,9 +292,11 @@
       <div @click="cerrarModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
 
       <div
-        class="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+        class="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[95vh] flex flex-col"
       >
-        <header class="p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+        <header
+          class="p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center flex-shrink-0"
+        >
           <div>
             <h2 class="text-2xl font-black text-slate-900">
               {{ editando ? 'Editar Insumo' : 'Nuevo Insumo' }}
@@ -273,7 +319,7 @@
           </button>
         </header>
 
-        <form @submit.prevent="guardarInsumo" class="p-8 space-y-6">
+        <form @submit.prevent="guardarInsumo" class="p-8 space-y-6 overflow-y-auto flex-1">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Nombre -->
             <div class="md:col-span-2 flex flex-col gap-2">
@@ -320,7 +366,7 @@
               </select>
             </div>
 
-            <!-- Precios (ESTE ES EL CORE DEL CAMBIO) -->
+            <!-- Precios -->
             <div class="flex flex-col gap-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
                 >Precio de Costo (Q)</label
@@ -372,9 +418,163 @@
                 class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700"
               />
             </div>
+
+            <!-- ========================================== -->
+            <!-- CAMPO: DESCRIPCIÓN -->
+            <!-- ========================================== -->
+            <div class="md:col-span-2 flex flex-col gap-2">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
+                >Descripción del Producto</label
+              >
+              <textarea
+                v-model="formulario.descripcion"
+                rows="4"
+                placeholder="Describe el producto: características, medidas, material, usos recomendados, observaciones especiales..."
+                class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-medium text-slate-600 text-sm resize-none leading-relaxed"
+              ></textarea>
+              <span class="text-[10px] text-slate-300 ml-2">
+                {{ (formulario.descripcion || '').length }} caracteres
+              </span>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- CAMPO: FOTOGRAFÍAS -->
+            <!-- ========================================== -->
+            <div class="md:col-span-2">
+              <label
+                class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-3 block"
+                >Fotografías del Producto (máximo 2)</label
+              >
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Foto 1 -->
+                <div class="relative">
+                  <div
+                    v-if="previewImagen1"
+                    class="w-full aspect-square rounded-2xl overflow-hidden border-2 border-cyan-200 bg-slate-50"
+                  >
+                    <img :src="previewImagen1" class="w-full h-full object-cover" alt="Preview 1" />
+                  </div>
+                  <div
+                    v-else-if="formulario.imagen1_url && !archivosImagenes[0]"
+                    class="w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 relative group/img"
+                  >
+                    <img
+                      :src="formulario.imagen1_url"
+                      class="w-full h-full object-cover"
+                      alt="Imagen actual 1"
+                    />
+                    <div
+                      class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <span class="text-white text-[10px] font-black uppercase">Guardada</span>
+                    </div>
+                  </div>
+                  <div
+                    v-else
+                    class="w-full aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:border-[#06b6d4]/50 hover:bg-cyan-50/30 transition-all cursor-pointer"
+                    @click="$refs.inputImagen1.click()"
+                  >
+                    <span class="material-icons text-3xl text-slate-300">add_photo_alternate</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Foto 1</span>
+                  </div>
+
+                  <input
+                    ref="inputImagen1"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="manejarArchivoImagen($event, 0)"
+                  />
+
+                  <button
+                    v-if="previewImagen1 || (formulario.imagen1_url && !archivosImagenes[0])"
+                    type="button"
+                    @click="eliminarImagen(1)"
+                    class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10"
+                  >
+                    <span class="material-icons text-sm">close</span>
+                  </button>
+
+                  <button
+                    v-if="previewImagen1"
+                    type="button"
+                    @click="$refs.inputImagen1.click()"
+                    class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 text-white rounded-lg text-[9px] font-bold uppercase backdrop-blur-sm hover:bg-black/80 transition-colors"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+
+                <!-- Foto 2 -->
+                <div class="relative">
+                  <div
+                    v-if="previewImagen2"
+                    class="w-full aspect-square rounded-2xl overflow-hidden border-2 border-cyan-200 bg-slate-50"
+                  >
+                    <img :src="previewImagen2" class="w-full h-full object-cover" alt="Preview 2" />
+                  </div>
+                  <div
+                    v-else-if="formulario.imagen2_url && !archivosImagenes[1]"
+                    class="w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 relative group/img"
+                  >
+                    <img
+                      :src="formulario.imagen2_url"
+                      class="w-full h-full object-cover"
+                      alt="Imagen actual 2"
+                    />
+                    <div
+                      class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <span class="text-white text-[10px] font-black uppercase">Guardada</span>
+                    </div>
+                  </div>
+                  <div
+                    v-else
+                    class="w-full aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:border-[#06b6d4]/50 hover:bg-cyan-50/30 transition-all cursor-pointer"
+                    @click="$refs.inputImagen2.click()"
+                  >
+                    <span class="material-icons text-3xl text-slate-300">add_photo_alternate</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Foto 2</span>
+                    <span class="text-[9px] text-slate-300">(Opcional)</span>
+                  </div>
+
+                  <input
+                    ref="inputImagen2"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="manejarArchivoImagen($event, 1)"
+                  />
+
+                  <button
+                    v-if="previewImagen2 || (formulario.imagen2_url && !archivosImagenes[1])"
+                    type="button"
+                    @click="eliminarImagen(2)"
+                    class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10"
+                  >
+                    <span class="material-icons text-sm">close</span>
+                  </button>
+
+                  <button
+                    v-if="previewImagen2"
+                    type="button"
+                    @click="$refs.inputImagen2.click()"
+                    class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 text-white rounded-lg text-[9px] font-bold uppercase backdrop-blur-sm hover:bg-black/80 transition-colors"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              </div>
+
+              <p class="text-[10px] text-slate-400 mt-3 ml-2 flex items-center gap-1">
+                <span class="material-icons text-xs">info</span>
+                Las imágenes se suben a la nube al guardar. Máximo 5MB por foto.
+              </p>
+            </div>
           </div>
 
-          <div class="flex gap-4 pt-4 border-t border-slate-50">
+          <div class="flex gap-4 pt-4 border-t border-slate-50 flex-shrink-0">
             <button
               type="button"
               @click="cerrarModal"
@@ -392,10 +592,60 @@
                 class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
               ></span>
               <span v-else class="material-icons text-sm">save</span>
-              {{ editando ? 'Guardar Cambios' : 'Registrar Insumo Comercial' }}
+              {{ guardando ? 'Subiendo...' : editando ? 'Guardar Cambios' : 'Registrar Insumo' }}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL VISOR DE IMÁGENES -->
+    <!-- ========================================== -->
+    <div v-if="visorAbierto" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div
+        @click="visorAbierto = false"
+        class="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+      ></div>
+
+      <div class="relative max-w-3xl w-full animate-in fade-in zoom-in duration-200">
+        <button
+          @click="visorAbierto = false"
+          class="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center justify-center"
+        >
+          <span class="material-icons">close</span>
+        </button>
+
+        <div class="flex gap-4 justify-center">
+          <div
+            v-if="visorDatos.imagen1_url"
+            class="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl"
+          >
+            <img
+              :src="visorDatos.imagen1_url"
+              :alt="visorDatos.nombre"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div
+            v-if="visorDatos.imagen2_url"
+            class="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl"
+          >
+            <img
+              :src="visorDatos.imagen2_url"
+              :alt="visorDatos.nombre"
+              class="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <p class="text-center text-white font-black text-lg mt-4">{{ visorDatos.nombre }}</p>
+        <p
+          v-if="visorDatos.descripcion"
+          class="text-center text-white/60 text-sm mt-1 max-w-lg mx-auto leading-relaxed"
+        >
+          {{ visorDatos.descripcion }}
+        </p>
       </div>
     </div>
   </div>
@@ -429,11 +679,23 @@ const formulario = ref({
   precio_compra_referencia: 0,
   precio_venta_sugerido: 0,
   descripcion: '',
+  imagen1_url: null,
+  imagen2_url: null,
   activo: true,
 })
 
-// --- PROPIEDADES COMPUTADAS ---
+// --- IMÁGENES ---
+const archivosImagenes = ref([null, null])
+const previewImagen1 = ref(null)
+const previewImagen2 = ref(null)
+const eliminarImagen1 = ref(false)
+const eliminarImagen2 = ref(false)
 
+// --- VISOR ---
+const visorAbierto = ref(false)
+const visorDatos = ref({})
+
+// --- COMPUTADAS ---
 const listaCategorias = computed(() => {
   const categorias = productos.value
     .map((p) => p.categoria_nombre)
@@ -469,7 +731,6 @@ const totalValuacionVenta = computed(() => {
 })
 
 // --- MÉTODOS ---
-
 const cargarInventario = async () => {
   try {
     cargando.value = true
@@ -489,6 +750,14 @@ const cargarInventario = async () => {
   }
 }
 
+const limpiarImagenes = () => {
+  archivosImagenes.value = [null, null]
+  previewImagen1.value = null
+  previewImagen2.value = null
+  eliminarImagen1.value = false
+  eliminarImagen2.value = false
+}
+
 const abrirModalCreacion = () => {
   editando.value = false
   productoId.value = null
@@ -501,8 +770,11 @@ const abrirModalCreacion = () => {
     precio_compra_referencia: 0,
     precio_venta_sugerido: 0,
     descripcion: '',
+    imagen1_url: null,
+    imagen2_url: null,
     activo: true,
   }
+  limpiarImagenes()
   modalAbierto.value = true
 }
 
@@ -510,6 +782,7 @@ const abrirModalEdicion = (item) => {
   editando.value = true
   productoId.value = item.id
   formulario.value = { ...item }
+  limpiarImagenes()
   modalAbierto.value = true
 }
 
@@ -517,18 +790,97 @@ const cerrarModal = () => {
   modalAbierto.value = false
 }
 
+// --- MANEJO DE IMÁGENES ---
+const manejarArchivoImagen = (event, index) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('La imagen no puede ser mayor a 5MB')
+    event.target.value = ''
+    return
+  }
+
+  archivosImagenes.value[index] = file
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    if (index === 0) {
+      previewImagen1.value = e.target.result
+    } else {
+      previewImagen2.value = e.target.result
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+const eliminarImagen = (numero) => {
+  if (numero === 1) {
+    if (previewImagen1.value) {
+      previewImagen1.value = null
+      archivosImagenes.value[0] = null
+    } else if (formulario.value.imagen1_url) {
+      eliminarImagen1.value = true
+      formulario.value.imagen1_url = null
+    }
+  } else {
+    if (previewImagen2.value) {
+      previewImagen2.value = null
+      archivosImagenes.value[1] = null
+    } else if (formulario.value.imagen2_url) {
+      eliminarImagen2.value = true
+      formulario.value.imagen2_url = null
+    }
+  }
+}
+
+// --- GUARDAR ---
 const guardarInsumo = async () => {
   try {
     guardando.value = true
+
+    const formData = new FormData()
+    formData.append('categoria_id', formulario.value.categoria_id || '')
+    formData.append('nombre', formulario.value.nombre)
+    formData.append('descripcion', formulario.value.descripcion || '')
+    formData.append('sku', formulario.value.sku)
+    formData.append('stock_actual', formulario.value.stock_actual)
+    formData.append('stock_minimo', formulario.value.stock_minimo)
+    formData.append('precio_compra_referencia', formulario.value.precio_compra_referencia)
+    formData.append('precio_venta_sugerido', formulario.value.precio_venta_sugerido)
+
+    // Agregar archivos de imagen si existen
+    archivosImagenes.value.forEach((archivo) => {
+      if (archivo) {
+        formData.append('imagenes', archivo)
+      }
+    })
+
+    // Si estamos editando, indicar qué imágenes eliminar
     if (editando.value) {
-      await api.put(`/inventario/${productoId.value}`, formulario.value)
-    } else {
-      await api.post('/inventario', formulario.value)
+      formData.append('eliminar_imagen1', eliminarImagen1.value ? 'true' : 'false')
+      formData.append('eliminar_imagen2', eliminarImagen2.value ? 'true' : 'false')
     }
+
+    if (editando.value) {
+      await api.put(`/inventario/${productoId.value}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    } else {
+      await api.post('/inventario', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+
     await cargarInventario()
     cerrarModal()
   } catch (err) {
-    alert('Error al intentar guardar la información comercial.')
+    console.error('Error al guardar:', err)
+    if (err.response?.data?.error) {
+      alert(err.response.data.error)
+    } else {
+      alert('Error al intentar guardar la información comercial.')
+    }
   } finally {
     guardando.value = false
   }
@@ -536,12 +888,18 @@ const guardarInsumo = async () => {
 
 const cambiarEstatus = async (id, nuevoEstado) => {
   try {
-    // Usamos la nueva ruta PATCH en lugar del PUT general
     await api.patch(`/inventario/${id}/estado`, { activo: nuevoEstado })
     await cargarInventario()
   } catch (err) {
     alert('Error técnico al actualizar el estado.')
   }
+}
+
+// --- VISOR ---
+const abrirVisorImagenes = (item) => {
+  if (!item.imagen1_url && !item.imagen2_url) return
+  visorDatos.value = item
+  visorAbierto.value = true
 }
 
 onMounted(cargarInventario)
@@ -558,7 +916,12 @@ onMounted(cargarInventario)
   background: #e2e8f0;
   border-radius: 10px;
 }
-
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -566,5 +929,28 @@ onMounted(cargarInventario)
 }
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes zoomIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-in {
+  animation:
+    fadeIn 0.2s ease-out,
+    zoomIn 0.2s ease-out;
 }
 </style>
