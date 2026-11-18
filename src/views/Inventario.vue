@@ -9,6 +9,14 @@
         </p>
       </div>
       <div class="flex gap-3">
+        <!-- NUEVO: exportar listado de productos a HTML imprimible en PDF -->
+        <button
+          @click="exportarListado"
+          title="Exporta los productos de la categoría seleccionada (o todos) a un HTML listo para imprimir en PDF"
+          class="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-xl font-bold shadow-sm hover:text-[#06b6d4] hover:border-[#06b6d4]/40 transition-all flex items-center gap-2"
+        >
+          <span class="material-icons">print</span> Exportar Listado
+        </button>
         <button
           @click="abrirModalCreacion"
           class="bg-[#06b6d4] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
@@ -156,6 +164,32 @@
                     </p>
                   </div>
                 </div>
+
+                <!-- NUEVO: grid de proveedores del producto (del más reciente al más antiguo) -->
+                <div
+                  v-if="(item.proveedores_rel || []).length > 0"
+                  class="mt-4 ml-1 max-w-[300px]"
+                >
+                  <p
+                    class="text-[9px] font-black text-slate-300 uppercase tracking-[0.18em] mb-1.5 flex items-center gap-1"
+                  >
+                    <span class="material-icons text-xs">local_shipping</span> Proveedores
+                  </p>
+                  <div class="space-y-1">
+                    <div
+                      v-for="rel in item.proveedores_rel"
+                      :key="rel.id"
+                      class="flex items-center justify-between gap-2 bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1 group-hover:border-cyan-100 transition-colors"
+                    >
+                      <span class="text-[10px] font-bold text-slate-600 truncate">
+                        {{ rel.nombre_empresa }}
+                      </span>
+                      <span class="text-[9px] text-slate-400 font-mono whitespace-nowrap">
+                        {{ formatearFecha(rel.fecha_ultima_compra) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </td>
               <!-- Columna de Fotos -->
               <td class="px-6 py-6">
@@ -286,7 +320,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- MODAL DE CREACIÓN / EDICIÓN -->
+    <!-- MODAL DE CREACIÓN / EDICIÓN                -->
     <!-- ========================================== -->
     <div v-if="modalAbierto" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div @click="cerrarModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
@@ -420,7 +454,7 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- CAMPO: DESCRIPCIÓN -->
+            <!-- CAMPO: DESCRIPCIÓN                         -->
             <!-- ========================================== -->
             <div class="md:col-span-2 flex flex-col gap-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2"
@@ -438,7 +472,124 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- CAMPO: FOTOGRAFÍAS -->
+            <!-- CAMPO: PROVEEDORES DEL PRODUCTO (NUEVO)    -->
+            <!-- Historial editable: del más reciente al    -->
+            <!-- más antiguo, igual que el grid de la tabla -->
+            <!-- ========================================== -->
+            <div class="md:col-span-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1"
+                  >Proveedores del Producto</label
+                >
+                <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mr-1">
+                  {{ proveedoresProducto.length }} registro(s)
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-400 mb-4 ml-1 leading-relaxed">
+                Historial de compras por proveedor (fecha, documento y cantidad de la última
+                compra). Se ordena automáticamente del más reciente al más antiguo. Las filas sin
+                proveedor seleccionado no se guardan.
+              </p>
+
+              <template v-if="editando">
+                <div class="space-y-3">
+                  <div
+                    v-for="(rel, indiceRel) in proveedoresProducto"
+                    :key="indiceRel"
+                    class="bg-white rounded-xl border border-slate-100 p-4"
+                  >
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                      <div class="md:col-span-4 flex flex-col gap-1.5">
+                        <label
+                          class="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1"
+                          >Proveedor</label
+                        >
+                        <select
+                          v-model="rel.proveedor_id"
+                          class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700 text-sm"
+                        >
+                          <option value="" disabled>Seleccionar proveedor...</option>
+                          <option v-for="prov in proveedoresDB" :key="prov.id" :value="prov.id">
+                            {{ prov.nombre_empresa }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="md:col-span-3 flex flex-col gap-1.5">
+                        <label
+                          class="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1"
+                          >Última Compra</label
+                        >
+                        <input
+                          v-model="rel.fecha_ultima_compra"
+                          type="date"
+                          class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700 text-sm"
+                        />
+                      </div>
+                      <div class="md:col-span-3 flex flex-col gap-1.5">
+                        <label
+                          class="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1"
+                          >Documento / Ref.</label
+                        >
+                        <input
+                          v-model="rel.documento"
+                          type="text"
+                          placeholder="FAC-001-2024"
+                          class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700 text-sm"
+                        />
+                      </div>
+                      <div class="md:col-span-2 flex flex-col gap-1.5">
+                        <label
+                          class="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1"
+                          >Cantidad</label
+                        >
+                        <input
+                          v-model.number="rel.cantidad"
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-[#06b6d4]/10 transition-all font-bold text-slate-700 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div class="flex justify-end mt-2">
+                      <button
+                        type="button"
+                        @click="quitarRelProveedor(indiceRel)"
+                        class="text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors flex items-center gap-1"
+                      >
+                        <span class="material-icons text-sm">delete_outline</span> Eliminar
+                      </button>
+                    </div>
+                  </div>
+
+                  <p
+                    v-if="proveedoresProducto.length === 0"
+                    class="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest py-4"
+                  >
+                    Este producto aún no tiene proveedores registrados
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  @click="agregarRelProveedor"
+                  class="mt-3 w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-[#06b6d4]/50 hover:text-[#06b6d4] hover:bg-cyan-50/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <span class="material-icons text-sm">add_circle</span> Agregar Proveedor
+                </button>
+              </template>
+
+              <p
+                v-else
+                class="text-[10px] text-slate-400 bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-2"
+              >
+                <span class="material-icons text-sm text-[#06b6d4]">info</span>
+                Guarda el producto primero; después edítalo para asignarle sus proveedores.
+              </p>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- CAMPO: FOTOGRAFÍAS                         -->
             <!-- ========================================== -->
             <div class="md:col-span-2">
               <label
@@ -600,7 +751,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- MODAL VISOR DE IMÁGENES -->
+    <!-- MODAL VISOR DE IMÁGENES                    -->
     <!-- ========================================== -->
     <div v-if="visorAbierto" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
       <div
@@ -654,10 +805,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '../api/axios'
+import logoBrinco from '../assets/logo.png'
 
 // --- ESTADO ---
 const productos = ref([])
 const categoriasDB = ref([])
+const proveedoresDB = ref([]) // NUEVO: catálogo de proveedores para el modal de edición
 const cargando = ref(true)
 const guardando = ref(false)
 const error = ref(null)
@@ -683,6 +836,10 @@ const formulario = ref({
   imagen2_url: null,
   activo: true,
 })
+
+// NUEVO: relaciones producto <-> proveedor del producto en edición
+// (cada fila: proveedor_id, fecha_ultima_compra, documento, cantidad)
+const proveedoresProducto = ref([])
 
 // --- IMÁGENES ---
 const archivosImagenes = ref([null, null])
@@ -730,17 +887,91 @@ const totalValuacionVenta = computed(() => {
   return total.toLocaleString(undefined, { minimumFractionDigits: 2 })
 })
 
+// NUEVO: productos del listado exportable.
+// Según lo pedido: si hay una categoría seleccionada solo esa; si está "Todos",
+// salen todos los productos (no aplica el filtro de búsqueda).
+const listaExportacion = computed(() => {
+  if (categoriaSeleccionada.value === 'TODOS') return productos.value
+  return productos.value.filter((p) => p.categoria_nombre === categoriaSeleccionada.value)
+})
+
+// --- NUEVO: helpers de proveedores, fechas y formato ---
+
+// Ordena relaciones de la compra más reciente a la más antigua (sin fecha al final)
+const ordenReciente = (a, b) => {
+  const fa = a.fecha_ultima_compra || ''
+  const fb = b.fecha_ultima_compra || ''
+  if (fa !== fb) return fa < fb ? 1 : -1
+  return (b.id || 0) - (a.id || 0)
+}
+
+// '2026-07-26' -> '26/07/2026'
+const formatearFecha = (valor) => {
+  if (!valor) return '—'
+  const partes = String(valor).slice(0, 10).split('-')
+  if (partes.length !== 3) return String(valor)
+  return `${partes[2]}/${partes[1]}/${partes[0]}`
+}
+
+// Número de fotografías guardadas del producto (para el listado exportable)
+const contarFotos = (item) => (item.imagen1_url ? 1 : 0) + (item.imagen2_url ? 1 : 0)
+
+const escapeHtml = (valor) =>
+  String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const formatoQ = (valor) =>
+  'Q ' +
+  Number(valor || 0).toLocaleString('es-GT', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
 // --- MÉTODOS ---
 const cargarInventario = async () => {
   try {
     cargando.value = true
     error.value = null
     const response = await api.get('/inventario')
-    productos.value = response.data
+
+    // NUEVO: relaciones producto <-> proveedor para el grid de cada fila.
+    // Si la ruta del backend aún no está integrada, el inventario carga igual
+    // y simplemente no muestra proveedores.
+    let relaciones = []
+    try {
+      const resRel = await api.get('/inventario-proveedores')
+      relaciones = Array.isArray(resRel.data) ? resRel.data : []
+    } catch (errRel) {
+      console.warn('Ruta /inventario-proveedores no disponible todavía:', errRel?.message)
+    }
+
+    const mapaRelaciones = {}
+    relaciones.forEach((rel) => {
+      if (!mapaRelaciones[rel.producto_id]) mapaRelaciones[rel.producto_id] = []
+      mapaRelaciones[rel.producto_id].push(rel)
+    })
+    Object.values(mapaRelaciones).forEach((lista) => lista.sort(ordenReciente))
+
+    productos.value = response.data.map((p) => ({
+      ...p,
+      proveedores_rel: mapaRelaciones[p.id] || [],
+    }))
 
     if (categoriasDB.value.length === 0) {
       const respCat = await api.get('/categorias')
       categoriasDB.value = respCat.data
+    }
+    if (proveedoresDB.value.length === 0) {
+      try {
+        const respProv = await api.get('/proveedores')
+        proveedoresDB.value = Array.isArray(respProv.data) ? respProv.data : []
+      } catch (errProv) {
+        console.error('No se pudieron cargar los proveedores:', errProv)
+      }
     }
   } catch (err) {
     console.error('Error en conexión API:', err)
@@ -774,6 +1005,7 @@ const abrirModalCreacion = () => {
     imagen2_url: null,
     activo: true,
   }
+  proveedoresProducto.value = []
   limpiarImagenes()
   modalAbierto.value = true
 }
@@ -782,8 +1014,54 @@ const abrirModalEdicion = (item) => {
   editando.value = true
   productoId.value = item.id
   formulario.value = { ...item }
+  // NUEVO: copia editable de las relaciones del producto (más reciente primero)
+  proveedoresProducto.value = (item.proveedores_rel || [])
+    .slice()
+    .sort(ordenReciente)
+    .map((r) => ({
+      proveedor_id: r.proveedor_id,
+      fecha_ultima_compra: r.fecha_ultima_compra || '',
+      documento: r.documento || '',
+      cantidad: r.cantidad === null || r.cantidad === undefined ? null : r.cantidad,
+    }))
   limpiarImagenes()
   modalAbierto.value = true
+}
+
+// NUEVO: agregar una fila vacía de proveedor en el modal
+const agregarRelProveedor = () => {
+  proveedoresProducto.value.push({
+    proveedor_id: '',
+    fecha_ultima_compra: '',
+    documento: '',
+    cantidad: null,
+  })
+}
+
+// NUEVO: quitar una fila de proveedor en el modal
+const quitarRelProveedor = (indice) => {
+  proveedoresProducto.value.splice(indice, 1)
+}
+
+// NUEVO: envía el set completo de relaciones al backend (reemplazo total)
+const guardarRelacionesProducto = async () => {
+  const relacionesLimpias = proveedoresProducto.value
+    .filter((r) => r.proveedor_id)
+    .map((r) => {
+      const cantidadNum = Number(r.cantidad)
+      return {
+        proveedor_id: r.proveedor_id,
+        fecha_ultima_compra: r.fecha_ultima_compra || null,
+        documento: (r.documento || '').trim(),
+        cantidad:
+          r.cantidad === '' || r.cantidad === null || Number.isNaN(cantidadNum)
+            ? null
+            : cantidadNum,
+      }
+    })
+  await api.put(`/inventario/${productoId.value}/proveedores`, {
+    relaciones: relacionesLimpias,
+  })
 }
 
 const cerrarModal = () => {
@@ -872,6 +1150,19 @@ const guardarInsumo = async () => {
       })
     }
 
+    // NUEVO: persistir las relaciones producto <-> proveedor (solo en edición,
+    // porque el producto debe existir ya en la base de datos).
+    if (editando.value) {
+      try {
+        await guardarRelacionesProducto()
+      } catch (errRel) {
+        console.error('Error al guardar proveedores del producto:', errRel)
+        alert(
+          'El producto se guardó, pero hubo un problema al guardar su lista de proveedores. Vuelve a editarlo e inténtalo de nuevo.',
+        )
+      }
+    }
+
     await cargarInventario()
     cerrarModal()
   } catch (err) {
@@ -900,6 +1191,199 @@ const abrirVisorImagenes = (item) => {
   if (!item.imagen1_url && !item.imagen2_url) return
   visorDatos.value = item
   visorAbierto.value = true
+}
+
+// --- NUEVO: EXPORTAR LISTADO DE PRODUCTOS A HTML (imprimible en PDF) ---
+
+const nombreArchivoExport = () => {
+  const base =
+    categoriaSeleccionada.value === 'TODOS'
+      ? 'todas-las-categorias'
+      : categoriaSeleccionada.value
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+  const hoy = new Date()
+  const sello = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(
+    hoy.getDate(),
+  ).padStart(2, '0')}`
+  return `listado-productos-${base}-${sello}.html`
+}
+
+// Convierte el logo (src/assets/logo.png) a data-URI base64 para incrustarlo
+// en el HTML exportado: asi el listado siempre muestra el logo, incluso
+// guardado como archivo o impreso en PDF sin conexion al servidor.
+let cacheLogoDataURI = null
+const obtenerLogoDataURI = () => {
+  if (cacheLogoDataURI) return Promise.resolve(cacheLogoDataURI)
+  return new Promise((resolve) => {
+    fetch(logoBrinco)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('logo no disponible'))))
+      .then(
+        (blob) =>
+          new Promise((res, rej) => {
+            const lector = new FileReader()
+            lector.onload = () => res(lector.result)
+            lector.onerror = rej
+            lector.readAsDataURL(blob)
+          }),
+      )
+      .then((dataURI) => {
+        cacheLogoDataURI = dataURI
+        resolve(dataURI)
+      })
+      .catch(() => resolve(null)) // sin logo: el listado sale solo con el texto
+  })
+}
+
+const construirHTMLListado = (logoDataURI) => {
+  const productosExport = listaExportacion.value
+  const ahora = new Date()
+  const fechaLarga = ahora.toLocaleDateString('es-GT', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
+  const hora = ahora.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' })
+  const etiquetaAlcance =
+    categoriaSeleccionada.value === 'TODOS'
+      ? 'Todas las categorías'
+      : `Categoría: ${categoriaSeleccionada.value}`
+
+  const filas = productosExport
+    .map((p) => {
+      const rels = (p.proveedores_rel || []).slice().sort(ordenReciente)
+      const reciente = rels[0]
+      const extras = rels.length > 1 ? ` <span class="mas">+${rels.length - 1}</span>` : ''
+      const fotos = contarFotos(p)
+      return `      <tr>
+        <td class="sku">${escapeHtml(p.sku || 'S/SKU')}</td>
+        <td class="nombre">${escapeHtml(p.nombre)}</td>
+        <td><span class="badge-cat">${escapeHtml(p.categoria_nombre || 'S/C')}</span></td>
+        <td class="desc">${escapeHtml(p.descripcion || '—')}</td>
+        <td class="num">${Number(p.stock_actual ?? 0).toLocaleString('es-GT')}</td>
+        <td class="num">${Number(p.stock_minimo ?? 0).toLocaleString('es-GT')}</td>
+        <td class="num">${formatoQ(p.precio_compra_referencia)}</td>
+        <td class="num precio-venta">${formatoQ(p.precio_venta_sugerido)}</td>
+        <td class="num">${fotos}</td>
+        <td class="prov">${reciente ? escapeHtml(reciente.nombre_empresa) + extras : '—'}</td>
+        <td class="fecha">${reciente ? formatearFecha(reciente.fecha_ultima_compra) : '—'}</td>
+      </tr>`
+    })
+    .join('\n')
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Listado de Productos - Brinco Creativo</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, Roboto, Arial, sans-serif; color: #0f172a; padding: 28px; padding-top: 116px; }
+  .encabezado { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; border-bottom: 4px solid #06b6d4; padding-bottom: 16px; margin-bottom: 22px; }
+  .identidad { display: flex; align-items: center; gap: 16px; }
+  .logo { height: 54px; width: auto; display: block; }
+  .marca { font-size: 30px; font-weight: 900; letter-spacing: -0.5px; color: #06b6d4; }
+  .submarca { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 2.5px; margin-top: 4px; }
+  .meta { text-align: right; font-size: 11px; color: #475569; line-height: 1.7; white-space: nowrap; }
+  .meta b { color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  thead th { background: #f8fafc; color: #334155; text-transform: uppercase; font-size: 9px; letter-spacing: 1.2px; padding: 10px 8px; border-bottom: 2px solid #06b6d4; text-align: left; }
+  tbody td { padding: 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tbody tr:nth-child(even) { background: #fafcfd; }
+  .sku { font-family: Consolas, 'Courier New', monospace; font-size: 9.5px; color: #64748b; white-space: nowrap; }
+  .nombre { font-weight: 800; }
+  .desc { color: #64748b; font-size: 10px; max-width: 240px; }
+  .badge-cat { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 6px; padding: 2px 8px; font-size: 8.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+  .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .precio-venta { color: #06b6d4; font-weight: 800; }
+  .prov { font-weight: 700; }
+  .mas { display: inline-block; background: #ecfeff; color: #0891b2; border: 1px solid #a5f3fc; border-radius: 6px; padding: 0 6px; font-size: 8.5px; font-weight: 800; }
+  .fecha { color: #64748b; white-space: nowrap; }
+  .pie { margin-top: 20px; display: flex; justify-content: space-between; font-size: 9.5px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+  .boton-imprimir { position: fixed; top: 18px; right: 18px; background: #06b6d4; color: #ffffff; border: none; padding: 13px 24px; border-radius: 12px; font-weight: 800; font-size: 12px; letter-spacing: 1px; cursor: pointer; box-shadow: 0 12px 28px rgba(6, 182, 212, 0.28); }
+  .boton-imprimir:hover { background: #0891b2; }
+  .ayuda { position: fixed; top: 72px; right: 18px; font-size: 10px; color: #64748b; max-width: 220px; text-align: right; }
+  @media print { .boton-imprimir, .ayuda { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+  <button class="boton-imprimir" onclick="window.print()">Imprimir / Guardar PDF</button>
+  <p class="ayuda">En el diálogo de impresión elige "Guardar como PDF" como destino.</p>
+
+  <div class="encabezado">
+    <div class="identidad">
+      ${logoDataURI ? `<img class="logo" src="${logoDataURI}" alt="Brinco Creativo" />` : ''}
+      <div>
+        <p class="marca">BRINCO CREATIVO</p>
+        <p class="submarca">Listado de Productos</p>
+      </div>
+    </div>
+    <div class="meta">
+      <b>${etiquetaAlcance}</b><br />
+      ${fechaLarga} · ${hora}<br />
+      ${productosExport.length} producto(s)
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Descripción</th>
+        <th style="text-align:right">Stock</th>
+        <th style="text-align:right">Mínimo</th>
+        <th style="text-align:right">P. Costo</th>
+        <th style="text-align:right">P. Venta</th>
+        <th style="text-align:right">Fotos</th>
+        <th>Proveedor Reciente</th>
+        <th>Última Compra</th>
+      </tr>
+    </thead>
+    <tbody>
+${filas}
+    </tbody>
+  </table>
+
+  <div class="pie">
+    <span>Brinco Creativo · Listado generado el ${fechaLarga} a las ${hora}</span>
+    <span>${etiquetaAlcance} · ${productosExport.length} producto(s)</span>
+  </div>
+</body>
+</html>`
+}
+
+const exportarListado = async () => {
+  if (listaExportacion.value.length === 0) {
+    alert('No hay productos para exportar con la categoría seleccionada.')
+    return
+  }
+
+  // Primero se prepara el logo (data-URI) y luego se arma el HTML completo
+  const logoDataURI = await obtenerLogoDataURI()
+  const html = construirHTMLListado(logoDataURI)
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  // Abre el listado en una pestaña nueva; desde ahí se imprime en PDF
+  const ventana = window.open(url, '_blank')
+  if (!ventana) {
+    // Fallback si el navegador bloquea las ventanas emergentes: descarga el .html
+    const enlace = document.createElement('a')
+    enlace.href = url
+    enlace.download = nombreArchivoExport()
+    document.body.appendChild(enlace)
+    enlace.click()
+    enlace.remove()
+    alert(
+      'El navegador bloqueó la ventana emergente: el listado se descargó como archivo HTML. Ábrelo y presiona "Imprimir / Guardar PDF".',
+    )
+  }
+
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
 }
 
 onMounted(cargarInventario)
@@ -954,3 +1438,4 @@ onMounted(cargarInventario)
     zoomIn 0.2s ease-out;
 }
 </style>
+
